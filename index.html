@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREMIUM TINT — Luxury Automotive Window Tinting & Detailing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="./style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script>
+        // Tailwind CSS konfiguratsiyasi (qora-oltin uslub va maxsus shriftlar)
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        brand: ['Cinzel', 'Georgia', 'serif'],
+                    },
+                    colors: {
+                        obsidian: '#0B0B0D',
+                        charcoal: '#131318',
+                        graphite: '#1B1B22',
+                        gold: {
+                            light: '#F5D77F',
+                            DEFAULT: '#D4AF37',
+                            dark: '#9E7E1E',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="min-h-screen flex flex-col selection:bg-gold selection:text-obsidian">
+
+    <!-- Toast xabarnoma konteyneri -->
+    <div id="toastContainer"
+        class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0">
+    </div>
+
+    <!-- Yuqori navigatsiya paneli -->
+    <header class="sticky top-0 z-50 bg-[#0B0B0D]/92 backdrop-blur-md border-b border-white/10">
+        <div
+            class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
+            <!-- Brend so'z belgisi: 5-6 marta bosilganda Admin panelga o'tadi -->
+            <button type="button" id="brandSecretTrigger" onclick="handleBrandSecretTap()" title="PREMIUM TINT"
+                class="flex flex-col justify-center items-start text-left group shrink-0 min-h-[44px] pr-1 focus:outline-none">
+                <div class="text-base sm:text-xl font-extrabold gold-gradient-text leading-none brand-wordmark">PREMIUM
+                    TINT</div>
+                <div class="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-gray-300 mt-1">06:00 — 22:00
+                </div>
+            </button>
+
+            <!-- Katta ekran menyusi -->
+            <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-gray-200">
+                <a href="#home" onclick="navigateTo('home', event)" class="nav-link hover:text-gold transition py-2"
+                    data-i18n="nav_home">Asosiy</a>
+                <a href="#simulator" onclick="navigateTo('simulator', event)"
+                    class="nav-link hover:text-gold transition py-2" data-i18n="nav_sim">Simulyator & Kalkulyator</a>
+                <a href="#booking" onclick="navigateTo('booking', event)"
+                    class="nav-link hover:text-gold transition py-2" data-i18n="nav_book">Bron qilish</a>
+                <a href="#queue" onclick="navigateTo('queue', event)"
+                    class="nav-link hover:text-gold transition py-2 flex items-center gap-1.5" data-i18n="nav_queue">
+                    Navbatdagi mashinalar
+                    <span id="headerQueueBadge"
+                        class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gold/20 text-gold border border-gold/30">0</span>
+                </a>
+                <a href="#reviews" onclick="navigateTo('reviews', event)"
+                    class="nav-link hover:text-gold transition py-2" data-i18n="nav_reviews">Sharhlar</a>
+            </nav>
+
+            <!-- O'ng tomon: Til almashtirish va Bron qilish tugmasi -->
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div class="flex items-center bg-charcoal border border-white/15 rounded-xl p-0.5 text-xs font-bold">
+                    <button type="button" id="langUzBtn" onclick="setLanguage('uz')"
+                        class="px-2.5 py-2 min-h-[36px] rounded-[10px] transition bg-gold text-obsidian">UZ</button>
+                    <button type="button" id="langRuBtn" onclick="setLanguage('ru')"
+                        class="px-2.5 py-2 min-h-[36px] rounded-[10px] transition text-gray-300 hover:text-white">RU</button>
+                </div>
+
+                <button type="button" onclick="navigateTo('booking')"
+                    class="hidden sm:inline-flex items-center justify-center gold-btn px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-extrabold tracking-wide"
+                    data-i18n="cta_book_now">
+                    Bron qilish
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobil gorizontal menyu -->
+        <div
+            class="lg:hidden border-t border-white/10 bg-[#0E0E12] px-2.5 py-2 flex items-center gap-2 overflow-x-auto text-xs sm:text-sm font-semibold">
+            <button type="button" onclick="navigateTo('home')"
+                class="px-3.5 py-2 min-h-[40px] rounded-xl bg-white/10 hover:bg-gold/20 text-white whitespace-nowrap transition"
+                data-i18n="nav_home">Asosiy</button>
+            <button type="button" onclick="navigateTo('simulator')"
+                class="px-3.5 py-2 min-h-[40px] rounded-xl bg-white/10 hover:bg-gold/20 text-white whitespace-nowrap transition"
+                data-i18n="nav_sim_short">Simulyator</button>
+            <button type="button" onclick="navigateTo('booking')"
+                class="px-3.5 py-2 min-h-[40px] rounded-xl bg-gold/20 border border-gold/40 text-gold-light whitespace-nowrap transition"
+                data-i18n="nav_book">Bron qilish</button>
+            <button type="button" onclick="navigateTo('queue')"
+                class="px-3.5 py-2 min-h-[40px] rounded-xl bg-white/10 hover:bg-gold/20 text-white whitespace-nowrap transition"
+                data-i18n="nav_queue_short">Navbatdagi mashinalar</button>
+            <button type="button" onclick="navigateTo('reviews')"
+                class="px-3.5 py-2 min-h-[40px] rounded-xl bg-white/10 hover:bg-gold/20 text-white whitespace-nowrap transition"
+                data-i18n="nav_reviews">Sharhlar</button>
+        </div>
+    </header>
+
+    <!-- ==================== ASOSIY MIJOZ QISMI ==================== -->
+    <main id="clientView" class="flex-1 motion-enter">
+
+        <!-- Hero bo'limi -->
+        <section id="home" class="studio-stage border-b border-white/10 py-8 sm:py-16">
+            <div
+                class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+                <div class="lg:col-span-6 space-y-5 motion-enter-delay-1">
+                    <div
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold-light text-xs font-semibold tracking-wide">
+                        <span class="w-2 h-2 rounded-full bg-gold animate-pulse"></span>
+                        <span data-i18n="hero_badge">PREMIUM TINT • O'ZBEKISTON AVTO STUDIYASI</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-[1.12]">
+                        <span class="gold-gradient-text" data-i18n="hero_title_1">PREMIUM TINT</span><br>
+                        <span class="text-white" data-i18n="hero_title_2">AVTOMOBIL TONIROVKA VA HIMOYA</span>
+                    </h1>
+
+                    <p class="text-gray-200 text-sm sm:text-base leading-relaxed max-w-xl" data-i18n="hero_desc">
+                        Malibu, Gentra, Cobalt, Tracker va boshqa mashinalar uchun quyoshdan himoya va oyna qoraytirish
+                        xizmati. Hammasi tushunarli: oldindan narxni ko‘rasiz, qulay vaqtni tanlaysiz va mashinangiz
+                        navbatini kuzatasiz.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div class="p-3.5 rounded-2xl bg-charcoal/95 border border-gold/30">
+                            <div class="text-[11px] uppercase tracking-wider text-gold font-semibold"
+                                data-i18n="master_role_label">Usta / Mutaxassis</div>
+                            <div id="heroMasterText" class="text-sm sm:text-base font-extrabold text-white mt-0.5"
+                                data-i18n="master_role_value">30 yoshlik mutaxassis</div>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-charcoal/95 border border-gold/30">
+                            <div class="text-[11px] uppercase tracking-wider text-gold font-semibold"
+                                data-i18n="master_exp_label">Tajriba</div>
+                            <div id="heroExpText" class="text-sm sm:text-base font-extrabold text-gold-light mt-0.5"
+                                data-i18n="master_exp_value">5+ yillik tajriba</div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 pt-1">
+                        <button onclick="navigateTo('booking')"
+                            class="gold-btn px-6 py-3.5 rounded-xl text-sm font-bold" data-i18n="hero_btn_book">
+                            Navbatga yozilish
+                        </button>
+                        <button onclick="navigateTo('queue')"
+                            class="px-5 py-3.5 rounded-xl bg-charcoal hover:bg-graphite border border-white/15 text-sm font-semibold text-white transition"
+                            data-i18n="hero_btn_queue">
+                            Navbatdagi mashinalar
+                        </button>
+                        <button type="button" onclick="replayIntroMotionSequence()"
+                            class="px-4 py-3.5 rounded-xl bg-gold/10 hover:bg-gold/20 border border-gold/40 text-xs sm:text-sm font-bold text-gold-light transition"
+                            id="replayMotionBtn">
+                            Animatsiyani ko‘rish
+                        </button>
+                        <button type="button" onclick="downloadSiteHtmlBundle()"
+                            class="px-4 py-3.5 rounded-xl bg-charcoal hover:bg-graphite border border-gold/40 text-xs sm:text-sm font-bold text-gold-light transition">
+                            Sayt faylini yuklab olish (.html)
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div class="p-3.5 rounded-2xl bg-charcoal/90 border border-white/10">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-400"
+                                data-i18n="work_hours_label">Ish vaqti</div>
+                            <div class="text-base font-bold text-gold-light mt-0.5">06:00 — 22:00</div>
+                            <div
+                                class="mt-2 pt-2 border-t border-white/10 text-[11px] text-gray-300 flex items-center justify-between gap-2">
+                                <span id="heroAddressText" class="truncate">Andijon sh, Jalaquduq tumani, Yorqishloq
+                                    shahri</span>
+                                <a id="heroMapLink"
+                                    href="https://www.google.com/maps/search/?api=1&query=Andijon+sh%2C+Jalaquduq+tumani%2C+Yorqishloq+shahri"
+                                    target="_blank" rel="noopener noreferrer"
+                                    class="text-gold hover:underline font-semibold shrink-0"
+                                    data-i18n="map_link_label">Xarita</a>
+                            </div>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-charcoal/90 border border-white/10">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-400"
+                                data-i18n="permit_short_label">Ruxsatnoma va BHM</div>
+                            <div class="text-xs text-gray-200 mt-0.5 leading-snug" data-i18n="permit_short_desc">Orqa va
+                                yon oynalarga qonuniy me'yorlar asosida xizmat ko‘rsatiladi; ruxsatnoma BHM asosida
+                                rasmiylashtiriladi.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- O'ng tomon: Jonli oyna qoraytirish simulyatori -->
+                <div class="lg:col-span-6 motion-enter-delay-2">
+                    <div class="gold-card rounded-3xl p-4 sm:p-6 space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <div class="text-xs uppercase tracking-widest text-gold font-semibold"
+                                    data-i18n="sim_kicker">Oyna Qoraytirish Simulyatori</div>
+                                <h2 class="text-lg sm:text-xl font-bold text-white mt-0.5" data-i18n="sim_heading">Jonli
+                                    ko‘rinishni sinab ko‘ring</h2>
+                            </div>
+                            <select id="simCarSelect" onchange="updateSimulator()"
+                                class="bg-obsidian border border-gold/30 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gold-light focus:outline-none focus:border-gold">
+                            </select>
+                        </div>
+
+                        <div
+                            class="relative rounded-2xl overflow-hidden border border-white/10 bg-[#09090C] p-3 sm:p-4">
+                            <div class="flex items-center justify-between gap-2 text-xs text-gray-400 mb-2.5">
+                                <span id="simActiveCarLabel" class="font-semibold text-white">Chevrolet Malibu</span>
+                                <div class="flex items-center gap-2">
+                                    <select id="simPhotoPresetSelect" onchange="applySimulatorPhotoPreset(this.value)"
+                                        class="bg-obsidian border border-white/15 rounded-lg px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-gold">
+                                        <option value="https://orientrentcar.uz/wp-content/uploads/2023/11/32-es.jpg">
+                                            Avto rasm (32-es)</option>
+                                        <option
+                                            value="https://commons.wikimedia.org/wiki/Special:FilePath/Chevrolet_Malibu_LT_.jpg">
+                                            Chevrolet Malibu LT</option>
+                                        <option
+                                            value="https://commons.wikimedia.org/wiki/Special:FilePath/Chevy-Malibu-sedan.jpg">
+                                            Chevrolet Malibu Sedan</option>
+                                    </select>
+                                    <span id="simActiveTintBadge"
+                                        class="px-2.5 py-0.5 rounded-full bg-gold/15 text-gold font-bold border border-gold/30">35%</span>
+                                </div>
+                            </div>
+
+                            <div
+                                class="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-[#121218] border border-white/10">
+                                <img id="simulatorPhotoImg"
+                                    src="https://orientrentcar.uz/wp-content/uploads/2023/11/32-es.jpg"
+                                    alt="PREMIUM TINT — Avtomobil tonirovka rasmi" onload="handleSimulatorPhotoLoad()"
+                                    onerror="handleSimulatorPhotoError()"
+                                    class="w-full h-full object-cover object-center transition-all duration-300" />
+                                <div id="simPhotoFallbackNotice"
+                                    class="hidden absolute inset-0 bg-[#121218]/95 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                                    <div class="text-xs font-bold text-amber-300" id="simPhotoErrorTitle">Rasm URL
+                                        yuklanmadi</div>
+                                    <div class="text-[11px] text-gray-400 max-w-md" id="simPhotoErrorDesc">Tashqi rasm
+                                        manzilini tekshiring yoki yuqoridagi ro‘yxatdan / Admin paneldan boshqa URL
+                                        kiriting.</div>
+                                </div>
+                                <div id="tintOverlayLayer"
+                                    class="absolute inset-0 bg-black transition-opacity duration-300 pointer-events-none"
+                                    style="opacity: 0.42;"></div>
+                                <div
+                                    class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 flex items-center justify-between gap-2 text-xs z-10">
+                                    <span id="simMasterCaption" class="text-gray-200 font-medium">30 yoshlik mutaxassis
+                                        • 5+ yillik tajriba</span>
+                                    <div class="flex items-center gap-2">
+                                        <span id="simLiveScrollZoneBadge"
+                                            class="px-2 py-0.5 rounded-md bg-gold/25 border border-gold/40 text-gold-light font-bold">10%
+                                            quyosh o‘tkazish</span>
+                                        <span id="simOverlayPercentLabel"
+                                            class="font-mono font-bold text-gold-light">35%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skroll / bosqichli oyna yaqinlashish motion bloki -->
+                        <div id="scrollWindowMotionBox"
+                            class="rounded-2xl border border-gold/40 bg-[#0D0D12] p-3.5 sm:p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <div class="text-[11px] uppercase tracking-wider text-gold font-bold"
+                                        id="motionStageKicker">Oyna Motion Zoom (Pastga tushiring yoki bosing)</div>
+                                    <div class="text-sm sm:text-base font-extrabold text-white mt-0.5 motion-step-pop"
+                                        id="motionZoneTitle">1-bosqich: Mashina umumiy ko‘rinishi</div>
+                                </div>
+                                <span id="motionSolarPassBadge"
+                                    class="px-3 py-1 rounded-full bg-gold/20 border border-gold/40 text-gold-light text-xs font-extrabold motion-step-pop">
+                                    10% quyosh o‘tkazish
+                                </span>
+                            </div>
+
+                            <p id="motionZoneDesc" class="text-xs sm:text-sm text-gray-200 leading-relaxed">
+                                Pastga tushirsangiz, old oyna yaqinlashadi va 10% quyosh o‘tkazish ko‘rsatiladi; yana
+                                tushirsangiz, old shofyоr tomoni yaqinlashib 20% quyosh o‘tkazish ko‘rsatiladi.
+                            </p>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <div class="flex items-center gap-1.5" id="motionStepDots">
+                                    <button type="button" onclick="setMotionZoneStep(0)"
+                                        class="motion-step-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-gold text-obsidian transition">1</button>
+                                    <button type="button" onclick="setMotionZoneStep(1)"
+                                        class="motion-step-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-gray-300 hover:text-white transition">2</button>
+                                    <button type="button" onclick="setMotionZoneStep(2)"
+                                        class="motion-step-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-gray-300 hover:text-white transition">3</button>
+                                    <button type="button" onclick="setMotionZoneStep(3)"
+                                        class="motion-step-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-gray-300 hover:text-white transition">4</button>
+                                </div>
+                                <button type="button" onclick="cycleMotionZoneStep()"
+                                    class="px-4 py-2 rounded-xl bg-charcoal hover:bg-graphite border border-gold/40 text-gold-light text-xs font-bold transition"
+                                    id="motionNextStepBtn">
+                                    Keyingi oyna →
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
+                                <span data-i18n="tint_level_label">Qoraytirish darajasi (VLT / Soya):</span>
+                                <span id="simTintDescription" class="text-gold-light font-medium">35% — O‘rta
+                                    qoraytirish</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button type="button" onclick="setSimTint(5)" data-tint="5"
+                                    class="sim-tint-btn py-2.5 rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition">5%</button>
+                                <button type="button" onclick="setSimTint(15)" data-tint="15"
+                                    class="sim-tint-btn py-2.5 rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition">15%</button>
+                                <button type="button" onclick="setSimTint(35)" data-tint="35"
+                                    class="sim-tint-btn py-2.5 rounded-xl border border-gold bg-gold text-obsidian text-xs sm:text-sm font-bold transition">35%</button>
+                                <button type="button" onclick="setSimTint(70)" data-tint="70"
+                                    class="sim-tint-btn py-2.5 rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition">70%</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Narx kalkulyatori bo'limi -->
+        <section id="simulator" class="py-12 sm:py-16 border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-gold font-semibold"
+                            data-i18n="calc_kicker">Narx Kalkulyatori</span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1" data-i18n="calc_heading">Xizmat
+                            narxini hisoblang</h2>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        <span data-i18n="calc_hours_note">Ish vaqti: 06:00 — 22:00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 gold-card rounded-3xl p-5 sm:p-7 space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+                                    data-i18n="lbl_car_model">Avtomobil rusumi</label>
+                                <select id="calcCar" onchange="recalculatePrice()"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+                                    data-i18n="lbl_film_tier">Plyonka darajasi / Foiz</label>
+                                <select id="calcTint" onchange="recalculatePrice()"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                                    <option value="5">5% — Ultra Dark (Limo)</option>
+                                    <option value="15">15% — Dark Protection</option>
+                                    <option value="35" selected>35% — Medium Comfort</option>
+                                    <option value="70">70% — Light Athermal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2"
+                                data-i18n="lbl_coverage">Qoplama qismi</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <button type="button" onclick="setCoverage('rear')" data-cov="rear"
+                                    class="cov-btn py-3 px-4 rounded-xl border border-gold bg-gold/15 text-gold-light text-xs sm:text-sm font-semibold text-center transition"
+                                    data-i18n="cov_rear">Orqa yon + orqa oyna</button>
+                                <button type="button" onclick="setCoverage('full_side')" data-cov="full_side"
+                                    class="cov-btn py-3 px-4 rounded-xl border border-white/15 bg-obsidian text-gray-300 text-xs sm:text-sm font-semibold text-center hover:border-gold/50 transition"
+                                    data-i18n="cov_full_side">Barcha yon oynalar</button>
+                                <button type="button" onclick="setCoverage('full_car')" data-cov="full_car"
+                                    class="cov-btn py-3 px-4 rounded-xl border border-white/15 bg-obsidian text-gray-300 text-xs sm:text-sm font-semibold text-center hover:border-gold/50 transition"
+                                    data-i18n="cov_full_car">To‘liq kompleks</button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-obsidian/90 border border-gold/25 flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gold shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="text-xs text-gray-300 leading-relaxed" id="permitInfoText">
+                                O‘zbekiston qonunchiligiga muvofiq orqa yon va orqa oynalar erkin qoraytiriladi; old yon
+                                oynalar uchun ruxsatnoma (migalka/tonirovka ruxsatnomasi) BHM (Bazaviy hisoblash
+                                miqdori) asosida rasmiylashtiriladi.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 gold-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6">
+                        <div>
+                            <div class="text-xs uppercase tracking-widest text-gray-400" data-i18n="calc_est_label">
+                                Taxminiy xizmat narxi</div>
+                            <div id="calcPriceDisplay" class="text-3xl sm:text-4xl font-black gold-gradient-text mt-2">1
+                                450 000 so‘m</div>
+                            <p id="calcBreakdownText" class="text-xs text-gray-400 mt-2"></p>
+                        </div>
+
+                        <div class="space-y-3 pt-4 border-t border-white/10">
+                            <button onclick="applyCalculatorToBooking()"
+                                class="w-full gold-btn py-3.5 rounded-xl text-sm font-bold" data-i18n="calc_use_btn">
+                                Shu tanlov bilan bron qilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bron qilish formasi bo'limi -->
+        <section id="booking" class="py-12 sm:py-16 border-b border-white/10 scroll-mt-24 sm:scroll-mt-28">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-8">
+                    <span class="text-xs uppercase tracking-widest text-gold font-semibold"
+                        data-i18n="book_kicker">Onlayn Navbat</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1" data-i18n="book_heading">Bron qilish
+                        formasi</h2>
+                    <p class="text-sm text-gray-400 mt-1" data-i18n="book_sub">Ma’lumotlarni kiriting — ariza darhol
+                        Admin panel va Telegram botga yuboriladi.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-7">
+                    <form id="bookingForm" onsubmit="handleBookingSubmit(event)"
+                        class="lg:col-span-8 gold-card rounded-3xl p-5 sm:p-7 space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_name">Ismingiz *</label>
+                                <input id="bName" type="text" required placeholder="Azizbek Karimov"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_phone">Telefon raqami *</label>
+                                <input id="bPhone" type="tel" required placeholder="+998 90 123 45 67"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_car">Mashina rusumi *</label>
+                                <select id="bCar" onchange="renderTimeSlots()"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-gold"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_plate">Davlat raqami *</label>
+                                <input id="bPlate" type="text" required placeholder="01 A 777 AA"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white uppercase focus:outline-none focus:border-gold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_color">Mashina rangi *</label>
+                                <input id="bColor" type="text" required placeholder="Qora / Mokriy asfalt"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_tint">Plyonka / Foiz *</label>
+                                <select id="bTint"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                                    <option value="5">5% — Limo</option>
+                                    <option value="15">15% — Dark</option>
+                                    <option value="35" selected>35% — Medium</option>
+                                    <option value="70">70% — Light</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                    data-i18n="f_cov">Qoplama qismi *</label>
+                                <select id="bCov"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                                    <option value="rear" data-i18n="cov_rear">Orqa yon + orqa oyna</option>
+                                    <option value="full_side" data-i18n="cov_full_side">Barcha yon oynalar</option>
+                                    <option value="full_car" data-i18n="cov_full_car">To‘liq kompleks</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1.5" data-i18n="f_date">Sana
+                                    *</label>
+                                <input id="bDate" type="date" required onchange="renderTimeSlots()"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-semibold text-gray-300" data-i18n="f_slot">Bo‘sh vaqt (06:00
+                                    — 22:00) *</label>
+                                <span id="slotHint" class="text-[11px] text-gray-400"></span>
+                            </div>
+                            <input type="hidden" id="bSlot" required>
+                            <div id="timeSlotsGrid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2"></div>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full gold-btn py-4 rounded-xl text-sm font-extrabold tracking-wide"
+                            data-i18n="btn_submit_booking">
+                            Buyurtma yuborish (Admin & Telegram)
+                        </button>
+                    </form>
+
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs font-bold uppercase tracking-wider text-gold">Telegram Bot Xabari
+                                </div>
+                                <span id="tgStatusPill"
+                                    class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Tayyor</span>
+                            </div>
+                            <p class="text-xs text-gray-400" data-i18n="tg_preview_desc">Buyurtma yuborilganda quyidagi
+                                formatda xabar shakllanadi va yuboriladi:</p>
+                            <pre id="tgPreviewBox"
+                                class="bg-obsidian border border-white/10 rounded-2xl p-3.5 text-[11px] sm:text-xs text-gray-200 whitespace-pre-wrap font-mono leading-relaxed"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- "Navbatdagi mashinalar" -->
+        <section id="queue" class="py-12 sm:py-16 border-b border-white/10 scroll-mt-24 sm:scroll-mt-28">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-gold font-semibold"
+                            data-i18n="queue_kicker">Jonli Holat</span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1" data-i18n="queue_heading">
+                            Navbatdagi mashinalar</h2>
+                    </div>
+
+                    <div class="relative w-full md:w-80">
+                        <input id="queueSearchInput" type="text" oninput="renderLiveQueue()"
+                            placeholder="Davlat raqami yoki rusum..."
+                            class="w-full bg-charcoal border border-white/15 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3" fill="none" stroke="currentColor"
+                            stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div id="lunchBreakBanner"
+                    class="hidden rounded-2xl border border-amber-400/50 bg-amber-500/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 font-bold text-lg">
+                            🍽</div>
+                        <div>
+                            <div class="text-base sm:text-lg font-extrabold text-amber-300" id="lunchBannerTitle">Hozir
+                                tushlik vaqti</div>
+                            <div class="text-xs sm:text-sm text-amber-100/90" id="lunchBannerResume">Ish soat 13:00 da
+                                davom etadi.</div>
+                        </div>
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 text-xs font-bold self-start sm:self-center"
+                        id="lunchBannerBadge">12:00 — 13:00</span>
+                </div>
+
+                <div id="liveQueueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </section>
+
+        <!-- Reyting va izohlar bo'limi -->
+        <section id="reviews" class="py-12 sm:py-16 scroll-mt-24 sm:scroll-mt-28">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-gold font-semibold"
+                            data-i18n="rev_kicker">Mijozlar Bahosi</span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1" data-i18n="rev_heading">Reyting
+                            va izohlar (1–5 yulduz)</h2>
+                    </div>
+                    <div id="avgRatingSummary" class="text-sm font-semibold text-gold-light"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-7">
+                    <form id="reviewForm" onsubmit="handleReviewSubmit(event)"
+                        class="lg:col-span-5 gold-card rounded-3xl p-5 sm:p-6 space-y-4 self-start">
+                        <h3 class="text-base font-bold text-white" data-i18n="rev_form_title">Xizmat yakunlangach baho
+                            va izoh qoldiring</h3>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                data-i18n="rev_name">Ismingiz *</label>
+                            <input id="rName" type="text" required placeholder="Jasurbek"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                data-i18n="rev_car_plate">Avtomobil / Davlat raqami *</label>
+                            <input id="rCarPlate" type="text" required placeholder="Gentra • 01 K 888 BB"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                data-i18n="rev_stars">Reyting (1 dan 5 gacha) *</label>
+                            <div id="starSelector" class="flex items-center gap-2">
+                                <button type="button" onclick="setReviewRating(1)" data-star="1"
+                                    class="star-btn text-2xl text-gold transition">★</button>
+                                <button type="button" onclick="setReviewRating(2)" data-star="2"
+                                    class="star-btn text-2xl text-gold transition">★</button>
+                                <button type="button" onclick="setReviewRating(3)" data-star="3"
+                                    class="star-btn text-2xl text-gold transition">★</button>
+                                <button type="button" onclick="setReviewRating(4)" data-star="4"
+                                    class="star-btn text-2xl text-gold transition">★</button>
+                                <button type="button" onclick="setReviewRating(5)" data-star="5"
+                                    class="star-btn text-2xl text-gold transition">★</button>
+                                <span id="ratingValueLabel" class="ml-2 text-xs font-bold text-gold-light">5 / 5</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1.5"
+                                data-i18n="rev_comment">Izohingiz *</label>
+                            <textarea id="rComment" rows="3" required
+                                placeholder="Plyonka sifati va xizmat tezligi juda yoqdi..."
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full gold-btn py-3 rounded-xl text-sm font-bold"
+                            data-i18n="rev_submit">Izoh yuborish</button>
+                    </form>
+
+                    <div id="reviewsList" class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== ADMIN PANEL ==================== -->
+    <section id="adminView" class="hidden flex-1 py-8 sm:py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div id="adminLoginBox" class="max-w-md mx-auto gold-card rounded-3xl p-6 sm:p-8 space-y-5 mt-6">
+                <div class="text-center space-y-1">
+                    <div class="text-xs uppercase tracking-widest text-gold font-bold">PREMIUM TINT • /admin</div>
+                    <h2 class="text-2xl font-extrabold text-white">Admin Panelga Kirish</h2>
+                    <p class="text-xs text-gray-400">Standart parol: <span
+                            class="text-gold-light font-mono">admin123</span></p>
+                </div>
+                <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                    <input id="adminPasswordInput" type="password" required placeholder="Parolni kiriting..."
+                        class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold">
+                    <button type="submit" class="w-full gold-btn py-3 rounded-xl text-sm font-bold">Kirish</button>
+                </form>
+                <div class="text-center">
+                    <button onclick="exitAdminRoute()" class="text-xs text-gray-400 hover:text-gold underline">Saytga
+                        qaytish</button>
+                </div>
+            </div>
+
+            <div id="adminDashboard" class="hidden space-y-8">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+                    <div>
+                        <div class="text-xs uppercase tracking-widest text-gold font-bold">Boshqaruv Markazi • /admin
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-white mt-0.5">PREMIUM TINT Admin Panel</h1>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="exitAdminRoute()"
+                            class="px-4 py-2 rounded-xl bg-charcoal border border-white/15 text-xs font-semibold text-gray-200 hover:border-gold transition">Saytni
+                            ko‘rish</button>
+                        <button onclick="handleAdminLogout()"
+                            class="px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-xs font-semibold text-red-300 hover:bg-red-500/25 transition">Chiqish</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="gold-card rounded-2xl p-4 sm:p-5">
+                        <div class="text-xs text-gray-400">Jami buyurtmalar</div>
+                        <div id="kpiTotalOrders" class="text-2xl sm:text-3xl font-black text-white mt-1">0</div>
+                    </div>
+                    <div class="gold-card rounded-2xl p-4 sm:p-5">
+                        <div class="text-xs text-gray-400">Jarayonda</div>
+                        <div id="kpiInProgress" class="text-2xl sm:text-3xl font-black text-gold-light mt-1">0</div>
+                    </div>
+                    <div class="gold-card rounded-2xl p-4 sm:p-5">
+                        <div class="text-xs text-gray-400">Yakunlangan (Tayyor)</div>
+                        <div id="kpiCompleted" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">0</div>
+                    </div>
+                    <div class="gold-card rounded-2xl p-4 sm:p-5">
+                        <div class="text-xs text-gray-400">Kassa / Tushum</div>
+                        <div id="kpiRevenue" class="text-xl sm:text-2xl font-black gold-gradient-text mt-1">0 so‘m</div>
+                    </div>
+                </div>
+
+                <div
+                    class="gold-card rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="text-xs uppercase tracking-wider text-amber-300 font-bold">Tushlik (Abed) Vaqti
+                            Boshqaruvi</div>
+                        <p class="text-xs text-gray-300">Tushlik vaqti yoqilganda saytdagi «Navbatdagi mashinalar»
+                            bo‘limida tushlik vaqti ekani va nechida chiqish/davom etish vaqti ko‘rinadi.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="text-xs text-gray-300">Qaytish vaqti:</label>
+                        <input id="adminLunchResumeTime" type="time" value="13:00" onchange="saveLunchSettings()"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <button id="adminLunchToggleBtn" onclick="toggleLunchBreak()"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-amber-500/20 text-amber-300 border border-amber-400/40 hover:bg-amber-500/30">
+                            Tushlikni yoqish
+                        </button>
+                    </div>
+                </div>
+
+                <div class="gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <div class="text-xs uppercase tracking-wider text-gold font-bold">Usta Ma’lumotlari va Rasm
+                                Havolasi</div>
+                            <p class="text-xs text-gray-400 mt-0.5">Usta ma’lumotlari va simulyator rasm URL manzilini
+                                boshqaring.</p>
+                        </div>
+                        <button type="button" onclick="saveMasterAndMediaSettings()"
+                            class="gold-btn px-4 py-2 rounded-xl text-xs font-bold">Saqlash</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Usta (UZ / RU asosiy matn)</label>
+                            <input id="admMasterUz" type="text"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Tajriba (UZ / RU asosiy matn)</label>
+                            <input id="admExpUz" type="text"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Simulyator rasm URL manzili</label>
+                            <input id="admSimPhotoUrl" type="url" placeholder="https://..."
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-gold">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 id="adminOrderFormTitle" class="text-lg font-bold text-white">Yangi buyurtma qo‘shish /
+                            Navbatga kiritish</h2>
+                        <button type="button" onclick="resetAdminOrderForm()"
+                            class="text-xs text-gray-400 hover:text-gold">Formani tozalash</button>
+                    </div>
+                    <form id="adminOrderForm" onsubmit="handleAdminOrderSave(event)"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <input type="hidden" id="admEditId">
+                        <input id="admName" type="text" required placeholder="Mijoz ismi"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white">
+                        <input id="admPhone" type="tel" required placeholder="+998 90 000 00 00"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white">
+                        <select id="admCar"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white"></select>
+                        <input id="admPlate" type="text" required placeholder="Davlat raqami (01 A 777 AA)"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white uppercase">
+                        <input id="admColor" type="text" required placeholder="Rangi"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white">
+                        <select id="admTint"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white">
+                            <option value="5">5%</option>
+                            <option value="15">15%</option>
+                            <option value="35" selected>35%</option>
+                            <option value="70">70%</option>
+                        </select>
+                        <input id="admSlot" type="text" required placeholder="Vaqt (masalan 09:00)"
+                            class="bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white">
+                        <button type="submit" class="gold-btn py-2.5 px-4 rounded-xl text-sm font-bold">Saqlash</button>
+                    </form>
+                </div>
+
+                <div class="gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                    <h2 class="text-lg font-bold text-white">Buyurtmalar va Ish Jarayoni Boshqaruvi</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="border-b border-white/10 text-gray-400 text-xs uppercase">
+                                    <th class="py-3 pr-3">Mijoz / Tel</th>
+                                    <th class="py-3 px-3">Mashina</th>
+                                    <th class="py-3 px-3">Raqam / Rang</th>
+                                    <th class="py-3 px-3">Vaqt / Foiz</th>
+                                    <th class="py-3 px-3">Narx</th>
+                                    <th class="py-3 px-3">Holat</th>
+                                    <th class="py-3 pl-3 text-right">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminOrdersTableBody" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-6 gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                        <h2 class="text-lg font-bold text-white">Mashinalar va Narxlar (Kalkulyator sinxron)</h2>
+                        <div id="adminCarsList" class="space-y-3"></div>
+                        <form onsubmit="handleAddCarModel(event)" class="flex gap-2 pt-2">
+                            <input id="newCarName" type="text" required placeholder="Yangi rusum (masalan: Monza)"
+                                class="flex-1 bg-obsidian border border-white/15 rounded-xl px-3.5 py-2 text-sm text-white">
+                            <input id="newCarPrice" type="number" required min="100000" step="50000"
+                                placeholder="Narx (so‘m)"
+                                class="w-36 bg-obsidian border border-white/15 rounded-xl px-3.5 py-2 text-sm text-white">
+                            <button type="submit"
+                                class="gold-btn px-4 py-2 rounded-xl text-xs font-bold">Qo‘shish</button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-6 gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                        <h2 class="text-lg font-bold text-white">Telegram Bot Integratsiyasi</h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Bot Token</label>
+                                <input id="tgBotToken" type="text" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Chat ID</label>
+                                <input id="tgChatId" type="text" placeholder="-1001234567890 yoki 987654321"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white font-mono">
+                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <label class="inline-flex items-center gap-2 text-xs text-gray-200 cursor-pointer">
+                                    <input id="tgEnabledCheckbox" type="checkbox" checked
+                                        class="rounded accent-[#D4AF37]">
+                                    <span>Avtomatik Telegram xabarnoma</span>
+                                </label>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="saveTelegramSettings()"
+                                        class="px-4 py-2 rounded-xl bg-charcoal border border-gold/40 text-gold-light text-xs font-bold hover:bg-gold/10">Saqlash</button>
+                                    <button type="button" onclick="sendTestTelegram()"
+                                        class="gold-btn px-4 py-2 rounded-xl text-xs font-bold">Test yuborish</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <div class="text-xs font-semibold text-gray-400 mb-2">Oxirgi yuborilgan Telegram xabarlar
+                                jurnali</div>
+                            <div id="tgLogsContainer" class="max-h-44 overflow-y-auto space-y-2 pr-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Manzil va Ijtimoiy Tarmoq Havolalari</h2>
+                            <p class="text-xs text-gray-400">Ustaxona manzili hamda Telegram, Instagram, Facebook va
+                                qo‘shimcha havolalarni shu yerda ulashing.</p>
+                        </div>
+                        <button type="button" onclick="saveWorkshopAndSocialSettings()"
+                            class="gold-btn px-4 py-2.5 rounded-xl text-xs font-bold">Manzil va tarmoqlarni
+                            saqlash</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Ustaxona manzili</label>
+                            <input id="admWorkshopAddress" type="text"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Telegram havolasi</label>
+                            <input id="admSocialTelegram" type="text" placeholder="https://t.me/..."
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Instagram havolasi</label>
+                            <input id="admSocialInstagram" type="text" placeholder="https://instagram.com/..."
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Facebook / Qo‘shimcha havola</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input id="admSocialFacebook" type="text" placeholder="https://facebook.com/..."
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                                <input id="admSocialExtra" type="text" placeholder="Qo‘shimcha havola"
+                                    class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                            </div>
+                        </div>
+                        <div id="adminReviewsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#070709] border-t border-white/10 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-5">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
+                    <span class="font-extrabold gold-gradient-text tracking-wider">PREMIUM TINT</span>
+                    <span>•</span>
+                    <span data-i18n="footer_hours">Ish vaqti: 06:00 — 22:00</span>
+                    <span>•</span>
+                    <a id="footerAddressLink"
+                        href="https://www.google.com/maps/search/?api=1&query=Andijon+sh%2C+Jalaquduq+tumani%2C+Yorqishloq+shahri"
+                        target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-gold transition">
+                        Andijon sh, Jalaquduq tumani, Yorqishloq shahri
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <a id="socialTelegramBtn" href="https://t.me/" target="_blank" rel="noopener noreferrer"
+                        aria-label="Telegram" title="Telegram"
+                        class="w-10 h-10 rounded-xl bg-charcoal hover:bg-gold/20 border border-white/15 hover:border-gold text-gray-200 hover:text-gold-light flex items-center justify-center transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M21.4 3.6c-.4-.3-1-.4-1.5-.2L3.2 9.9c-.6.2-1 .8-1 1.4 0 .6.4 1.2 1 1.4l4.1 1.4 1.6 5.1c.2.6.7 1 1.3 1 .4 0 .8-.2 1.1-.5l2.4-2.5 4.2 3.1c.3.2.7.3 1.1.3.8 0 1.5-.6 1.7-1.4L22.2 5c.1-.6-.1-1.1-.8-1.4zM9.8 14.3l8.6-7.7-6.9 9.1-.3 2.8-1.4-4.2z" />
+                        </svg>
+                    </a>
+                    <a id="socialInstagramBtn" href="https://instagram.com/" target="_blank" rel="noopener noreferrer"
+                        aria-label="Instagram" title="Instagram"
+                        class="w-10 h-10 rounded-xl bg-charcoal hover:bg-gold/20 border border-white/15 hover:border-gold text-gray-200 hover:text-gold-light flex items-center justify-center transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="5" />
+                            <circle cx="12" cy="12" r="4" />
+                            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                        </svg>
+                    </a>
+                    <a id="socialFacebookBtn" href="https://facebook.com/" target="_blank" rel="noopener noreferrer"
+                        aria-label="Facebook" title="Facebook"
+                        class="w-10 h-10 rounded-xl bg-charcoal hover:bg-gold/20 border border-white/15 hover:border-gold text-gray-200 hover:text-gold-light flex items-center justify-center transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z" />
+                        </svg>
+                    </a>
+                    <a id="socialExtraBtn" href="#" target="_blank" rel="noopener noreferrer" aria-label="Extra Link"
+                        title="Qo‘shimcha havola"
+                        class="hidden w-10 h-10 rounded-xl bg-charcoal hover:bg-gold/20 border border-white/15 hover:border-gold text-gray-200 hover:text-gold-light flex items-center justify-center transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span>© <span id="footerYear">2026</span> <span
+                            class="brand-wordmark font-bold text-gray-300">PREMIUM TINT</span></span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="./premium_tint_asosiy_javascript_mantiqi.js"></script>
+</body>
+
+</html>
