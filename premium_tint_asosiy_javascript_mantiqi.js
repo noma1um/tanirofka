@@ -266,6 +266,7 @@ function loadState() {
 }
 
 let appState = loadState();
+let activeAdminTab = 'all';
 
 function saveState() {
     try {
@@ -328,6 +329,33 @@ function closeAdminLoginModal() {
     if (modal) modal.classList.add('hidden');
 }
 
+function setAdminTab(tabName) {
+    const allowed = ['all', 'profile', 'cars', 'orders', 'reviews'];
+    activeAdminTab = allowed.includes(tabName) ? tabName : 'all';
+
+    document.querySelectorAll('.adm-tab-btn').forEach((btn) => {
+        const isSelected = btn.getAttribute('data-adm-tab') === activeAdminTab;
+        btn.className = isSelected
+            ? 'adm-tab-btn px-4 py-2.5 min-h-[40px] rounded-xl bg-gold text-obsidian whitespace-nowrap shrink-0 transition'
+            : 'adm-tab-btn px-4 py-2.5 min-h-[40px] rounded-xl bg-charcoal border border-white/15 text-gray-200 hover:text-white whitespace-nowrap shrink-0 transition';
+    });
+
+    const map = {
+        profile: 'adminSectionProfile',
+        cars: 'adminSectionCars',
+        orders: 'adminSectionOrders',
+        reviews: 'adminSectionReviews'
+    };
+
+    document.querySelectorAll('.admin-panel-section').forEach((sec) => {
+        if (activeAdminTab === 'all') {
+            sec.classList.remove('hidden');
+        } else {
+            sec.classList.toggle('hidden', sec.id !== map[activeAdminTab]);
+        }
+    });
+}
+
 function revealAdminPanelSection() {
     const adminView = document.getElementById('adminView');
     if (!adminView) return;
@@ -337,6 +365,7 @@ function revealAdminPanelSection() {
     adminView.classList.add('motion-enter');
     syncAdminInputsFromState();
     renderAdminDashboard();
+    setAdminTab(activeAdminTab);
     adminView.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1109,6 +1138,26 @@ function handleAdminAddCar(event) {
     showToast(appState.lang === 'ru' ? 'Автомобиль добавлен' : 'Yangi mashina saqlandi');
 }
 
+function updateAdminCarPrice(carId) {
+    const inputEl = document.getElementById(`admCarPriceEdit_${carId}`);
+    const nextPrice = Number(inputEl?.value || 0);
+    if (!nextPrice || nextPrice < 50000) {
+        showToast(appState.lang === 'ru' ? 'Введите корректную цену' : 'Narxni to‘g‘ri kiriting', 'error');
+        return;
+    }
+
+    commitState((st) => {
+        const target = st.cars.find((c) => c.id === carId);
+        if (target) target.basePrice = nextPrice;
+    });
+
+    populateCarSelects();
+    recalculatePrice();
+    renderLiveQueue();
+    renderAdminDashboard();
+    showToast(appState.lang === 'ru' ? 'Цена обновлена' : 'Mashina narxi saqlandi');
+}
+
 function deleteAdminCar(carId) {
     if (appState.cars.length <= 1) {
         showToast(appState.lang === 'ru' ? 'Должна остаться хотя бы 1 машина' : 'Kamida 1 ta mashina qolishi kerak', 'error');
@@ -1165,19 +1214,45 @@ function deleteAdminReview(revId) {
     showToast(appState.lang === 'ru' ? 'Отзыв удален' : 'Sharh o‘chirildi');
 }
 
+function renderAdminStats() {
+    const totalEl = document.getElementById('statTotalOrders');
+    const activeEl = document.getElementById('statActiveOrders');
+    const doneEl = document.getElementById('statCompletedOrders');
+    const carsEl = document.getElementById('statCarsCount');
+
+    const total = appState.orders.length;
+    const active = appState.orders.filter((o) => o.status === 'waiting' || o.status === 'in_progress').length;
+    const completed = appState.orders.filter((o) => o.status === 'completed').length;
+    const carsCount = appState.cars.length;
+
+    if (totalEl) totalEl.textContent = String(total);
+    if (activeEl) activeEl.textContent = String(active);
+    if (doneEl) doneEl.textContent = String(completed);
+    if (carsEl) carsEl.textContent = String(carsCount);
+}
+
 function renderAdminDashboard() {
+    renderAdminStats();
+
     const carsEl = document.getElementById('adminCarsList');
     if (carsEl) {
         carsEl.innerHTML = appState.cars.map((car) => `
-            <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex items-center justify-between gap-2 min-w-0">
-                <div class="min-w-0">
+            <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 space-y-2.5 min-w-0">
+                <div class="flex items-center justify-between gap-2">
                     <div class="text-xs font-bold text-white truncate">${car.name}</div>
-                    <div class="text-[11px] text-gold-light">${formatUZS(car.basePrice)}</div>
+                    <button type="button" onclick="deleteAdminCar('${car.id}')"
+                        class="px-2.5 py-1 min-h-[32px] rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200 shrink-0">
+                        O‘chirish
+                    </button>
                 </div>
-                <button type="button" onclick="deleteAdminCar('${car.id}')"
-                    class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200 shrink-0">
-                    O‘chirish
-                </button>
+                <div class="flex items-center gap-2">
+                    <input id="admCarPriceEdit_${car.id}" type="number" min="50000" step="10000" value="${car.basePrice}"
+                        class="w-full min-w-0 bg-charcoal border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                    <button type="button" onclick="updateAdminCarPrice('${car.id}')"
+                        class="px-3 py-1.5 min-h-[34px] rounded-lg gold-btn text-[11px] font-extrabold shrink-0">
+                        Saqlash
+                    </button>
+                </div>
             </div>
         `).join('');
     }
