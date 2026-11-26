@@ -98,38 +98,6 @@ function createDefaultState() {
                 price: 1450000,
                 status: 'in_progress',
                 startedAt: '08:05'
-            },
-            {
-                id: 'ORD-102',
-                name: 'Dilshod Tursunov',
-                phone: '+998 93 512 88 11',
-                carId: 'gentra',
-                carName: 'Chevrolet Gentra',
-                plate: '01 M 412 KA',
-                color: 'Mokriy asfalt',
-                tint: 15,
-                coverage: 'full_side',
-                date: getTodayISO(),
-                slot: '09:30',
-                price: 1750000,
-                status: 'waiting',
-                startedAt: null
-            },
-            {
-                id: 'ORD-103',
-                name: 'Nodirbek Qodirov',
-                phone: '+998 97 701 22 33',
-                carId: 'tracker',
-                carName: 'Chevrolet Tracker',
-                plate: '10 T 105 BA',
-                color: 'Oq',
-                tint: 35,
-                coverage: 'rear',
-                date: getTodayISO(),
-                slot: '06:30',
-                price: 1350000,
-                status: 'completed',
-                startedAt: '06:35'
             }
         ],
         reviews: [
@@ -138,15 +106,7 @@ function createDefaultState() {
                 name: 'Nodirbek Qodirov',
                 carPlate: 'Tracker • 10 T 105 BA',
                 rating: 5,
-                comment: 'Ertalab 06:30 da kirdim, plyonka juda tiniq va pufakchasiz tortildi. Tavsiya qilaman!',
-                approved: true
-            },
-            {
-                id: 'REV-2',
-                name: 'Javohir Rustamov',
-                carPlate: 'Cobalt • 01 X 509 ZB',
-                rating: 5,
-                comment: 'Jarayonni saytdan kuzatib bordim, vaqtida tayyor bo‘ldi.',
+                comment: 'Plyonka juda tiniq va sifatli tortildi.',
                 approved: true
             }
         ]
@@ -157,55 +117,6 @@ function sanitizeState(parsed) {
     const base = createDefaultState();
     if (!parsed || typeof parsed !== 'object') return base;
 
-    const safeCars = Array.isArray(parsed.cars) && parsed.cars.length > 0
-        ? parsed.cars.map((c, idx) => ({
-            id: String(c?.id || `car_${idx}`),
-            name: String(c?.name || 'Avtomobil'),
-            basePrice: Number(c?.basePrice) > 0 ? Number(c.basePrice) : 1100000,
-            type: c?.type === 'suv' ? 'suv' : 'sedan',
-            photoUrl: typeof c?.photoUrl === 'string' && c.photoUrl.trim() ? c.photoUrl.trim() : DEFAULT_SIM_PHOTO_URL
-        }))
-        : base.cars;
-
-    const safeOrders = Array.isArray(parsed.orders)
-        ? parsed.orders.filter((o) => o && typeof o === 'object').map((o, i) => ({
-            id: String(o.id || `ORD-${200 + i}`),
-            name: String(o.name || 'Mijoz'),
-            phone: String(o.phone || ''),
-            carId: String(o.carId || safeCars[0].id),
-            carName: String(o.carName || safeCars[0].name),
-            plate: String(o.plate || '').toUpperCase(),
-            color: String(o.color || ''),
-            tint: [5, 15, 35, 70].includes(Number(o.tint)) ? Number(o.tint) : 35,
-            coverage: ['rear', 'full_side', 'full_car'].includes(o.coverage) ? o.coverage : 'rear',
-            date: String(o.date || getTodayISO()),
-            slot: String(o.slot || '09:00'),
-            price: Number(o.price) >= 0 ? Number(o.price) : 1100000,
-            status: ['waiting', 'in_progress', 'completed', 'cancelled'].includes(o.status) ? o.status : 'waiting',
-            startedAt: o.startedAt ? String(o.startedAt) : null
-        }))
-        : base.orders;
-
-    const safeReviews = Array.isArray(parsed.reviews)
-        ? parsed.reviews.filter((r) => r && typeof r === 'object').map((r, i) => ({
-            id: String(r.id || `REV-${i + 1}`),
-            name: String(r.name || 'Mijoz'),
-            carPlate: String(r.carPlate || ''),
-            rating: Math.min(5, Math.max(1, Number(r.rating) || 5)),
-            comment: String(r.comment || ''),
-            approved: typeof r.approved === 'boolean' ? r.approved : true
-        }))
-        : base.reviews;
-
-    const safeLogs = Array.isArray(parsed.telegram?.logs)
-        ? parsed.telegram.logs.filter((l) => l && typeof l === 'object').slice(0, 30)
-        : [];
-
-    const safeTintMultipliers = { ...base.tintMultipliers, ...(parsed.tintMultipliers || {}) };
-    if (!Number(safeTintMultipliers[70])) {
-        safeTintMultipliers[70] = 1.1;
-    }
-
     const oldUzRole = String(parsed.masterInfo?.uzRole || '');
     const oldRuRole = String(parsed.masterInfo?.ruRole || '');
 
@@ -214,7 +125,7 @@ function sanitizeState(parsed) {
         lang: parsed.lang === 'ru' ? 'ru' : 'uz',
         adminAuthenticated: Boolean(parsed.adminAuthenticated),
         simTint: [5, 15, 35, 70].includes(Number(parsed.simTint)) ? Number(parsed.simTint) : 35,
-        simCarId: safeCars.some((c) => c.id === parsed.simCarId) ? parsed.simCarId : safeCars[0].id,
+        simCarId: typeof parsed.simCarId === 'string' && parsed.simCarId ? parsed.simCarId : base.simCarId,
         simPhotoUrl: typeof parsed.simPhotoUrl === 'string' && parsed.simPhotoUrl.trim() ? parsed.simPhotoUrl.trim() : DEFAULT_SIM_PHOTO_URL,
         calcCoverage: ['rear', 'full_side', 'full_car'].includes(parsed.calcCoverage) ? parsed.calcCoverage : 'rear',
         masterInfo: {
@@ -227,27 +138,11 @@ function sanitizeState(parsed) {
             ruExp: String(parsed.masterInfo?.ruExp || base.masterInfo.ruExp)
         },
         workshopAddress: String(parsed.workshopAddress || base.workshopAddress),
-        socials: {
-            telegram: String(parsed.socials?.telegram || base.socials.telegram),
-            instagram: String(parsed.socials?.instagram || base.socials.instagram),
-            facebook: String(parsed.socials?.facebook || base.socials.facebook),
-            extra: String(parsed.socials?.extra || '')
-        },
-        lunchBreak: {
-            active: Boolean(parsed.lunchBreak?.active),
-            resumeTime: /^\d{2}:\d{2}$/.test(String(parsed.lunchBreak?.resumeTime || '')) ? String(parsed.lunchBreak.resumeTime) : '13:00'
-        },
-        telegram: {
-            enabled: typeof parsed.telegram?.enabled === 'boolean' ? parsed.telegram.enabled : true,
-            botToken: String(parsed.telegram?.botToken || ''),
-            chatId: String(parsed.telegram?.chatId || ''),
-            logs: safeLogs
-        },
-        cars: safeCars,
-        tintMultipliers: safeTintMultipliers,
+        cars: Array.isArray(parsed.cars) && parsed.cars.length > 0 ? parsed.cars : base.cars,
+        tintMultipliers: { ...base.tintMultipliers, ...(parsed.tintMultipliers || {}) },
         coverageMultipliers: { ...base.coverageMultipliers, ...(parsed.coverageMultipliers || {}) },
-        orders: safeOrders,
-        reviews: safeReviews
+        orders: Array.isArray(parsed.orders) ? parsed.orders : base.orders,
+        reviews: Array.isArray(parsed.reviews) ? parsed.reviews : base.reviews
     };
 }
 
@@ -262,13 +157,13 @@ function loadState() {
 }
 
 let appState = loadState();
-let currentReviewRating = 5;
+let activeMotionStep = 0;
 
 function saveState() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
     } catch (e) {
-        // Xotira cheklovida xato chiqarmaslik
+        // storage error ignored
     }
 }
 
@@ -278,6 +173,7 @@ function formatUZS(amount) {
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const el = document.createElement('div');
     const borderColor = type === 'error' ? 'border-red-500/50 text-red-200 bg-red-950/95' : 'border-gold/50 text-gold-light bg-[#16161D]/95';
     el.className = `pointer-events-auto border ${borderColor} rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold shadow-2xl backdrop-blur-md transition-all`;
@@ -286,10 +182,9 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         el.style.opacity = '0';
         setTimeout(() => el.remove(), 250);
-    }, 3400);
+    }, 3200);
 }
 
-/* ==================== TIL (UZ / RU) ==================== */
 const i18n = {
     uz: {
         nav_home: 'Asosiy',
@@ -303,7 +198,7 @@ const i18n = {
         hero_badge: "PREMIUM TINT • O'ZBEKISTON AVTO STUDIYASI",
         hero_title_1: 'PREMIUM TINT',
         hero_title_2: 'AVTOMOBIL TONIROVKA VA HIMOYA',
-        hero_desc: 'Malibu, Gentra, Cobalt, Tracker va boshqa avtomobillar uchun yuqori sifatli quyoshdan himoya va tonirovka xizmati. Jarayonni jonli kuzating, narxni oldindan hisoblang va bo‘sh vaqtga yoziling.',
+        hero_desc: 'Malibu, Gentra, Cobalt, Tracker va boshqa mashinalar uchun quyoshdan himoya va oyna qoraytirish xizmati.',
         hero_btn_book: 'Navbatga yozilish',
         hero_btn_queue: 'Navbatdagi mashinalar',
         work_hours_label: 'Ish vaqti',
@@ -329,27 +224,12 @@ const i18n = {
         book_sub: 'Ma’lumotlarni kiriting — ariza darhol Admin panel va Telegram botga yuboriladi.',
         f_name: 'Ismingiz *',
         f_phone: 'Telefon raqami *',
-        f_car: 'Mashina rusumi *',
+        f_car: 'Avtomobil rusumi *',
         f_plate: 'Davlat raqami *',
-        f_color: 'Mashina rangi *',
-        f_tint: 'Plyonka / Foiz *',
-        f_cov: 'Qoplama qismi *',
+        f_tint: 'Qoraytirish / Himoya *',
         f_date: 'Sana *',
-        f_slot: 'Bo‘sh vaqt (06:00 — 22:00) *',
-        btn_submit_booking: 'Buyurtma yuborish (Admin & Telegram)',
-        tg_preview_desc: 'Buyurtma yuborilganda quyidagi formatda xabar shakllanadi va yuboriladi:',
-        queue_kicker: 'Jonli Holat',
-        queue_heading: 'Navbatdagi mashinalar',
-        rev_kicker: 'Mijozlar Bahosi',
-        rev_heading: 'Reyting va izohlar (1–5 yulduz)',
-        rev_form_title: 'Xizmat yakunlangach baho va izoh qoldiring',
-        rev_name: 'Ismingiz *',
-        rev_car_plate: 'Avtomobil / Davlat raqami *',
-        rev_stars: 'Reyting (1 dan 5 gacha) *',
-        rev_comment: 'Izohingiz *',
-        rev_submit: 'Izoh yuborish',
-        footer_hours: 'Ish vaqti: 06:00 — 22:00',
-        permit_full: 'Solntsezashchita (quyoshdan himoya) standarti: yorug‘lik o‘tkazish ko‘rsatkichi 70% gacha ruxsat etilgan — undan past ko‘rsatkich jarimaga sabab bo‘ladi. Orqa yon va orqa oynalar qonuniy me’yorlar asosida qoraytiriladi; ruxsatnoma BHM asosida rasmiylashtiriladi.'
+        f_slot: 'Vaqt oralig‘i (06:00 — 22:00) *',
+        permit_full: 'Solntsezashchita (quyoshdan himoya) standarti: yorug‘lik o‘tkazish ko‘rsatkichi 70% gacha ruxsat etilgan — undan past ko‘rsatkich jarimaga sabab bo‘ladi.'
     },
     ru: {
         nav_home: 'Главная',
@@ -363,7 +243,7 @@ const i18n = {
         hero_badge: 'PREMIUM TINT • АВТОСТУДИЯ УЗБЕКИСТАНА',
         hero_title_1: 'PREMIUM TINT',
         hero_title_2: 'ТОНИРОВКА И ЗАЩИТА АВТО',
-        hero_desc: 'Профессиональная тонировка и защита стекол для Malibu, Gentra, Cobalt, Tracker и других авто. Следите за статусом онлайн, рассчитывайте стоимость и выбирайте свободное время.',
+        hero_desc: 'Профессиональная тонировка и защита стекол для Malibu, Gentra, Cobalt, Tracker и других авто.',
         hero_btn_book: 'Записаться онлайн',
         hero_btn_queue: 'Машины в очереди',
         work_hours_label: 'Время работы',
@@ -391,22 +271,242 @@ const i18n = {
         f_phone: 'Телефон *',
         f_car: 'Модель авто *',
         f_plate: 'Госномер *',
-        f_color: 'Цвет авто *',
         f_tint: 'Пленка / % *',
-        f_cov: 'Зона оклейки *',
         f_date: 'Дата *',
         f_slot: 'Свободное время (06:00 — 22:00) *',
-        btn_submit_booking: 'Отправить заявку (Админ и Telegram)',
-        tg_preview_desc: 'При отправке заявки формируется и отправляется сообщение следующего вида:',
-        queue_kicker: 'Живой Статус',
-        queue_heading: 'Машины в очереди',
-        rev_kicker: 'Отзывы Клиентов',
-        rev_heading: 'Рейтинг и отзывы (1–5 звезд)',
-        rev_form_title: 'Оставьте оценку и отзыв после завершения работ',
-        rev_name: 'Ваше имя *',
-        rev_car_plate: 'Авто / Госномер *',
-        rev_stars: 'Рейтинг (от 1 до 5) *',
-        rev_comment: 'Ваш отзыв *',
-        rev_submit: 'Отправить отзыв',
-        footer_hours: 'Время работы: 06:00 — 22:00',
-        permit_full: 'Стандарт солнцезащиты: пропускание света
+        permit_full: 'Стандарт солнцезащиты: пропускание света разрешено до 70% — показатель ниже приводит к штрафу.'
+    }
+};
+
+function setLanguage(lang) {
+    appState.lang = lang === 'ru' ? 'ru' : 'uz';
+    saveState();
+
+    const uzBtn = document.getElementById('langUzBtn');
+    const ruBtn = document.getElementById('langRuBtn');
+    if (uzBtn && ruBtn) {
+        if (appState.lang === 'uz') {
+            uzBtn.className = 'px-2.5 py-2 min-h-[36px] rounded-[10px] transition bg-gold text-obsidian';
+            ruBtn.className = 'px-2.5 py-2 min-h-[36px] rounded-[10px] transition text-gray-300 hover:text-white';
+        } else {
+            ruBtn.className = 'px-2.5 py-2 min-h-[36px] rounded-[10px] transition bg-gold text-obsidian';
+            uzBtn.className = 'px-2.5 py-2 min-h-[36px] rounded-[10px] transition text-gray-300 hover:text-white';
+        }
+    }
+
+    document.querySelectorAll('[data-i18n]').forEach((node) => {
+        const key = node.getAttribute('data-i18n');
+        if (i18n[appState.lang] && i18n[appState.lang][key]) {
+            node.textContent = i18n[appState.lang][key];
+        }
+    });
+
+    const heroMasterEl = document.getElementById('heroMasterText');
+    const heroExpEl = document.getElementById('heroExpText');
+    const heroFullNameEl = document.getElementById('heroMasterFullName');
+    const heroPhoneEl = document.getElementById('heroMasterPhone');
+
+    if (heroFullNameEl) {
+        heroFullNameEl.textContent = appState.lang === 'ru'
+            ? (appState.masterInfo?.ruName || 'Маруфжон Кудратов')
+            : (appState.masterInfo?.uzName || "Ma'rufjon Kudratov");
+    }
+    if (heroPhoneEl && appState.masterInfo?.phone) {
+        heroPhoneEl.textContent = appState.masterInfo.phone;
+        heroPhoneEl.href = 'tel:' + appState.masterInfo.phone.replace(/\s+/g, '');
+    }
+    if (heroMasterEl) {
+        heroMasterEl.textContent = appState.lang === 'ru'
+            ? (appState.masterInfo?.ruRole || 'Специалист 28 лет')
+            : (appState.masterInfo?.uzRole || '28 yoshlik mutaxassis');
+    }
+    if (heroExpEl) {
+        heroExpEl.textContent = appState.lang === 'ru'
+            ? (appState.masterInfo?.ruExp || '5+ лет опыта')
+            : (appState.masterInfo?.uzExp || '5+ yillik tajriba');
+    }
+
+    const permitEl = document.getElementById('permitInfoText');
+    if (permitEl) permitEl.textContent = i18n[appState.lang].permit_full;
+
+    updateSimulator();
+    recalculatePrice();
+}
+
+function populateCarSelects() {
+    ['simCarSelect', 'calcCar', 'bCar'].forEach((id) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        appState.cars.forEach((car) => {
+            const opt = document.createElement('option');
+            opt.value = car.id;
+            opt.textContent = car.name;
+            sel.appendChild(opt);
+        });
+    });
+    const simSel = document.getElementById('simCarSelect');
+    if (simSel) simSel.value = appState.simCarId;
+}
+
+function setSimTint(percent) {
+    appState.simTint = [5, 15, 35, 70].includes(Number(percent)) ? Number(percent) : 35;
+    saveState();
+    updateSimulator();
+}
+
+function applySimulatorPhotoPreset(url) {
+    if (!url || !url.trim()) return;
+    appState.simPhotoUrl = url.trim();
+    saveState();
+    updateSimulator();
+}
+
+function updateSimulator() {
+    const simSel = document.getElementById('simCarSelect');
+    if (simSel) appState.simCarId = simSel.value;
+    const carObj = appState.cars.find((c) => c.id === appState.simCarId) || appState.cars[0];
+    const tint = appState.simTint;
+
+    document.querySelectorAll('.sim-tint-btn').forEach((btn) => {
+        const t = Number(btn.getAttribute('data-tint'));
+        btn.className = t === tint
+            ? 'sim-tint-btn py-2.5 rounded-xl border border-gold bg-gold text-obsidian text-xs sm:text-sm font-bold transition'
+            : 'sim-tint-btn py-2.5 rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition';
+    });
+
+    const opacityMap = { 5: 0.78, 15: 0.62, 35: 0.42, 70: 0.18 };
+    const overlay = document.getElementById('tintOverlayLayer');
+    if (overlay) overlay.style.opacity = String(opacityMap[tint] ?? 0.42);
+
+    const activePhotoUrl = (appState.simPhotoUrl || carObj?.photoUrl || DEFAULT_SIM_PHOTO_URL).trim();
+    const img = document.getElementById('simulatorPhotoImg');
+    if (img && img.getAttribute('src') !== activePhotoUrl) {
+        img.setAttribute('src', activePhotoUrl);
+    }
+
+    const masterFullName = appState.lang === 'ru'
+        ? (appState.masterInfo?.ruName || 'Маруфжон Кудратов')
+        : (appState.masterInfo?.uzName || "Ma'rufjon Kudratov");
+    const roleText = appState.lang === 'ru'
+        ? (appState.masterInfo?.ruRole || 'Специалист 28 лет')
+        : (appState.masterInfo?.uzRole || '28 yoshlik mutaxassis');
+    const expText = appState.lang === 'ru'
+        ? (appState.masterInfo?.ruExp || '5+ лет опыта')
+        : (appState.masterInfo?.uzExp || '5+ yillik tajriba');
+
+    const cap = document.getElementById('simMasterCaption');
+    if (cap) cap.textContent = `${masterFullName} • ${roleText} • ${expText}`;
+
+    const carLabel = document.getElementById('simActiveCarLabel');
+    const tintBadge = document.getElementById('simActiveTintBadge');
+    const pctLabel = document.getElementById('simOverlayPercentLabel');
+    if (carLabel) carLabel.textContent = carObj ? carObj.name : 'Chevrolet Malibu';
+    if (tintBadge) tintBadge.textContent = `${tint}%`;
+    if (pctLabel) pctLabel.textContent = `${tint}%`;
+}
+
+function setCoverage(cov) {
+    appState.calcCoverage = ['rear', 'full_side', 'full_car'].includes(cov) ? cov : 'rear';
+    document.querySelectorAll('.cov-btn').forEach((btn) => {
+        const active = btn.getAttribute('data-cov') === appState.calcCoverage;
+        btn.className = active
+            ? 'cov-btn py-3 px-4 rounded-xl border border-gold bg-gold/15 text-gold-light text-xs sm:text-sm font-semibold text-center transition'
+            : 'cov-btn py-3 px-4 rounded-xl border border-white/15 bg-obsidian text-gray-300 text-xs sm:text-sm font-semibold text-center hover:border-gold/50 transition';
+    });
+    recalculatePrice();
+}
+
+function recalculatePrice() {
+    const carId = document.getElementById('calcCar')?.value || appState.simCarId;
+    const tintKey = Number(document.getElementById('calcTint')?.value || appState.simTint || 35);
+    const car = appState.cars.find((c) => c.id === carId) || appState.cars[0];
+    const tMult = Number(appState.tintMultipliers[tintKey] || 1.0);
+    const cMult = Number(appState.coverageMultipliers[appState.calcCoverage] || 1.0);
+    const total = Math.round(((car?.basePrice || 1100000) * tMult * cMult) / 1000) * 1000;
+
+    const priceEl = document.getElementById('calcPriceDisplay');
+    if (priceEl) priceEl.textContent = formatUZS(total);
+}
+
+function applyCalculatorToBooking() {
+    const carId = document.getElementById('calcCar')?.value;
+    const tintVal = document.getElementById('calcTint')?.value;
+    const bCar = document.getElementById('bCar');
+    const bTint = document.getElementById('bTint');
+    if (bCar && carId) bCar.value = carId;
+    if (bTint && tintVal) {
+        bTint.value = tintVal === '70' ? '70% Solntsezashchita' : `${tintVal}%`;
+    }
+    navigateTo('booking');
+}
+
+function saveAdminMasterProfile(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const uzName = (document.getElementById('admMasterNameUz')?.value || "Ma'rufjon Kudratov").trim();
+    const ruName = (document.getElementById('admMasterNameRu')?.value || 'Маруфжон Кудратов').trim();
+    const ageNum = Math.min(90, Math.max(18, parseInt(document.getElementById('admMasterAge')?.value, 10) || 28));
+    const phone = (document.getElementById('admMasterPhone')?.value || '+998 90 123 45 67').trim();
+
+    appState.masterInfo = {
+        ...appState.masterInfo,
+        uzName,
+        ruName,
+        phone,
+        uzRole: `${ageNum} yoshlik mutaxassis`,
+        ruRole: `Специалист ${ageNum} лет`
+    };
+    saveState();
+    setLanguage(appState.lang);
+    showToast('Usta ma’lumotlari saqlandi');
+}
+
+function handleBookingSubmit(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const name = document.getElementById('bName')?.value?.trim();
+    const phone = document.getElementById('bPhone')?.value?.trim();
+    const plate = document.getElementById('bPlate')?.value?.trim().toUpperCase();
+    if (!name || !phone || !plate) {
+        showToast('Majburiy maydonlarni to‘ldiring', 'error');
+        return;
+    }
+    showToast('Buyurtma qabul qilindi!');
+    event.target.reset();
+}
+
+function navigateTo(sectionId, event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setMotionZoneStep(idx) {
+    activeMotionStep = Math.max(0, Math.min(3, Number(idx) || 0));
+}
+
+function cycleMotionZoneStep() {
+    setMotionZoneStep((activeMotionStep + 1) % 4);
+}
+
+function replayIntroMotionSequence() {
+    setMotionZoneStep(0);
+    showToast('Animatsiya boshlandi');
+}
+
+function downloadSiteHtmlBundle() {
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'premium-tint.html';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    populateCarSelects();
+    const dateInput = document.getElementById('bDate');
+    if (dateInput && !dateInput.value) dateInput.value = getTodayISO();
+    setLanguage(appState.lang);
+});
