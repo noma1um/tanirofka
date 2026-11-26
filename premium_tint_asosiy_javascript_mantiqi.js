@@ -44,7 +44,7 @@ function createDefaultState() {
         calcCoverage: 'rear',
         masterInfo: {
             uzName: "Ma'rufjon Kudratov",
-            ruName: "Маруфжон Кудратов",
+            ruName: 'Маруфжон Кудратов',
             phone: '+998 90 123 45 67',
             uzRole: '28 yoshlik mutaxassis',
             uzExp: '5+ yillik tajriba',
@@ -52,6 +52,12 @@ function createDefaultState() {
             ruExp: '5+ лет опыта'
         },
         workshopAddress: 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri',
+        socials: {
+            telegram: 'https://t.me/',
+            instagram: 'https://instagram.com/',
+            facebook: 'https://facebook.com/',
+            extra: ''
+        },
         lunchBreak: {
             active: false,
             resumeTime: '13:00'
@@ -87,12 +93,46 @@ function createDefaultState() {
                 carId: 'malibu',
                 carName: 'Chevrolet Malibu',
                 plate: '01 A 777 AA',
+                color: 'Qora',
                 tint: '35%',
                 coverage: 'rear',
                 date: getTodayISO(),
                 slot: '08:00',
                 price: 1450000,
-                status: 'in_progress'
+                status: 'in_progress',
+                startedAt: '08:05'
+            },
+            {
+                id: 'ORD-102',
+                name: 'Dilshod Tursunov',
+                phone: '+998 93 512 88 11',
+                carId: 'gentra',
+                carName: 'Chevrolet Gentra',
+                plate: '01 M 412 KA',
+                color: 'Mokriy asfalt',
+                tint: '15%',
+                coverage: 'full_side',
+                date: getTodayISO(),
+                slot: '09:30',
+                price: 1750000,
+                status: 'waiting',
+                startedAt: null
+            },
+            {
+                id: 'ORD-103',
+                name: 'Nodirbek Qodirov',
+                phone: '+998 97 701 22 33',
+                carId: 'tracker',
+                carName: 'Chevrolet Tracker',
+                plate: '10 T 105 BA',
+                color: 'Oq',
+                tint: '70% Solntsezashchita',
+                coverage: 'rear',
+                date: getTodayISO(),
+                slot: '06:30',
+                price: 1485000,
+                status: 'completed',
+                startedAt: '06:35'
             }
         ],
         reviews: [
@@ -101,7 +141,15 @@ function createDefaultState() {
                 name: 'Nodirbek Qodirov',
                 carPlate: 'Tracker • 10 T 105 BA',
                 rating: 5,
-                comment: 'Plyonka juda tiniq va sifatli tortildi.',
+                comment: 'Ertalab 06:30 da kirdim, plyonka juda tiniq va pufakchasiz tortildi. Tavsiya qilaman!',
+                approved: true
+            },
+            {
+                id: 'REV-2',
+                name: 'Javohir Rustamov',
+                carPlate: 'Cobalt • 01 X 509 ZB',
+                rating: 5,
+                comment: 'Jarayonni saytdan kuzatib bordim, vaqtida tayyor bo‘ldi.',
                 approved: true
             }
         ]
@@ -115,32 +163,58 @@ function sanitizeState(parsed) {
     const oldUzRole = String(parsed.masterInfo?.uzRole || '');
     const oldRuRole = String(parsed.masterInfo?.ruRole || '');
 
-    const cleanCars = Array.isArray(parsed.cars) && parsed.cars.length > 0
+    const safeCars = Array.isArray(parsed.cars) && parsed.cars.length > 0
         ? parsed.cars
             .filter((c) => c && typeof c === 'object' && String(c.name || '').trim())
             .map((c, idx) => ({
                 id: String(c.id || `car_${idx}_${Date.now()}`),
                 name: String(c.name).trim(),
-                basePrice: Math.max(50000, Number(c.basePrice) || 1100000),
+                basePrice: Number(c.basePrice) > 0 ? Number(c.basePrice) : 1100000,
                 type: c.type === 'suv' ? 'suv' : 'sedan',
                 photoUrl: typeof c.photoUrl === 'string' && c.photoUrl.trim() ? c.photoUrl.trim() : DEFAULT_SIM_PHOTO_URL
             }))
         : base.cars;
 
-    const cleanOrders = Array.isArray(parsed.orders)
-        ? parsed.orders.filter((o) => o && typeof o === 'object')
+    const safeOrders = Array.isArray(parsed.orders)
+        ? parsed.orders.filter((o) => o && typeof o === 'object').map((o, i) => ({
+            id: String(o.id || `ORD-${200 + i}`),
+            name: String(o.name || 'Mijoz'),
+            phone: String(o.phone || ''),
+            carId: String(o.carId || safeCars[0].id),
+            carName: String(o.carName || safeCars[0].name),
+            plate: String(o.plate || '').toUpperCase(),
+            color: String(o.color || ''),
+            tint: String(o.tint || '35%'),
+            coverage: ['rear', 'full_side', 'full_car'].includes(o.coverage) ? o.coverage : 'rear',
+            date: String(o.date || getTodayISO()),
+            slot: String(o.slot || '09:00'),
+            price: Number(o.price) >= 0 ? Number(o.price) : 1100000,
+            status: ['waiting', 'in_progress', 'completed', 'cancelled'].includes(o.status) ? o.status : 'waiting',
+            startedAt: o.startedAt ? String(o.startedAt) : null
+        }))
         : base.orders;
 
-    const cleanReviews = Array.isArray(parsed.reviews)
-        ? parsed.reviews.filter((r) => r && typeof r === 'object')
+    const safeReviews = Array.isArray(parsed.reviews)
+        ? parsed.reviews.filter((r) => r && typeof r === 'object').map((r, i) => ({
+            id: String(r.id || `REV-${i + 1}`),
+            name: String(r.name || 'Mijoz'),
+            carPlate: String(r.carPlate || ''),
+            rating: Math.min(5, Math.max(1, Number(r.rating) || 5)),
+            comment: String(r.comment || ''),
+            approved: typeof r.approved === 'boolean' ? r.approved : true
+        }))
         : base.reviews;
+
+    const safeLogs = Array.isArray(parsed.telegram?.logs)
+        ? parsed.telegram.logs.filter((l) => l && typeof l === 'object').slice(0, 30)
+        : [];
 
     return {
         ...base,
         lang: parsed.lang === 'ru' ? 'ru' : 'uz',
         adminAuthenticated: Boolean(parsed.adminAuthenticated),
         simTint: [5, 15, 35, 70].includes(Number(parsed.simTint)) ? Number(parsed.simTint) : 35,
-        simCarId: typeof parsed.simCarId === 'string' && parsed.simCarId ? parsed.simCarId : cleanCars[0].id,
+        simCarId: safeCars.some((c) => c.id === parsed.simCarId) ? parsed.simCarId : safeCars[0].id,
         simPhotoUrl: typeof parsed.simPhotoUrl === 'string' && parsed.simPhotoUrl.trim() ? parsed.simPhotoUrl.trim() : DEFAULT_SIM_PHOTO_URL,
         calcCoverage: ['rear', 'full_side', 'full_car'].includes(parsed.calcCoverage) ? parsed.calcCoverage : 'rear',
         masterInfo: {
@@ -153,30 +227,27 @@ function sanitizeState(parsed) {
             ruExp: String(parsed.masterInfo?.ruExp ?? base.masterInfo.ruExp).trim() || base.masterInfo.ruExp
         },
         workshopAddress: String(parsed.workshopAddress ?? base.workshopAddress).trim() || base.workshopAddress,
+        socials: {
+            telegram: String(parsed.socials?.telegram || base.socials.telegram),
+            instagram: String(parsed.socials?.instagram || base.socials.instagram),
+            facebook: String(parsed.socials?.facebook || base.socials.facebook),
+            extra: String(parsed.socials?.extra || '')
+        },
         lunchBreak: {
             active: Boolean(parsed.lunchBreak?.active),
-            resumeTime: String(parsed.lunchBreak?.resumeTime || '13:00').trim() || '13:00'
+            resumeTime: /^\d{2}:\d{2}$/.test(String(parsed.lunchBreak?.resumeTime || '')) ? String(parsed.lunchBreak.resumeTime) : '13:00'
         },
         telegram: {
-            enabled: parsed.telegram?.enabled !== false,
+            enabled: typeof parsed.telegram?.enabled === 'boolean' ? parsed.telegram.enabled : true,
             botToken: String(parsed.telegram?.botToken || ''),
             chatId: String(parsed.telegram?.chatId || ''),
-            logs: Array.isArray(parsed.telegram?.logs) ? parsed.telegram.logs : []
+            logs: safeLogs
         },
-        cars: cleanCars,
-        tintMultipliers: {
-            5: Number(parsed.tintMultipliers?.[5] ?? base.tintMultipliers[5]),
-            15: Number(parsed.tintMultipliers?.[15] ?? base.tintMultipliers[15]),
-            35: Number(parsed.tintMultipliers?.[35] ?? base.tintMultipliers[35]),
-            70: Number(parsed.tintMultipliers?.[70] ?? base.tintMultipliers[70])
-        },
-        coverageMultipliers: {
-            rear: Number(parsed.coverageMultipliers?.rear ?? base.coverageMultipliers.rear),
-            full_side: Number(parsed.coverageMultipliers?.full_side ?? base.coverageMultipliers.full_side),
-            full_car: Number(parsed.coverageMultipliers?.full_car ?? base.coverageMultipliers.full_car)
-        },
-        orders: cleanOrders,
-        reviews: cleanReviews
+        cars: safeCars,
+        tintMultipliers: { ...base.tintMultipliers, ...(parsed.tintMultipliers || {}) },
+        coverageMultipliers: { ...base.coverageMultipliers, ...(parsed.coverageMultipliers || {}) },
+        orders: safeOrders,
+        reviews: safeReviews
     };
 }
 
@@ -195,16 +266,12 @@ function loadState() {
 }
 
 let appState = loadState();
-let activeMotionStep = 0;
-let brandTapCount = 0;
-let brandTapTimer = null;
 
 function saveState() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         return true;
     } catch (e) {
-        console.error('localStorage ga saqlashda xato:', e);
         return false;
     }
 }
@@ -234,10 +301,13 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         el.style.opacity = '0';
         setTimeout(() => el.remove(), 250);
-    }, 3200);
+    }, 3400);
 }
 
-/* ==================== PAROL OYNASI VA ADMIN KIRISH ==================== */
+/* ==================== PAROL OYNASI VA 5 MARTA BOSISH ==================== */
+let brandTapCount = 0;
+let brandTapTimer = null;
+
 function openAdminLoginModal() {
     const modal = document.getElementById('adminLoginModal');
     const input = document.getElementById('adminPassInput');
@@ -246,7 +316,10 @@ function openAdminLoginModal() {
     if (modal) modal.classList.remove('hidden');
     if (input) {
         input.value = '';
-        setTimeout(() => input.focus(), 50);
+        input.type = 'password';
+        const toggleBtn = document.getElementById('togglePassBtn');
+        if (toggleBtn) toggleBtn.textContent = appState.lang === 'ru' ? 'Показать' : 'Ko‘rsatish';
+        setTimeout(() => input.focus(), 60);
     }
 }
 
@@ -255,17 +328,22 @@ function closeAdminLoginModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-function revealAdminSection() {
-    const adminEl = document.getElementById('adminView');
-    if (!adminEl) return;
-    adminEl.classList.remove('hidden');
+function revealAdminPanelSection() {
+    const adminView = document.getElementById('adminView');
+    if (!adminView) return;
+    adminView.classList.remove('hidden');
+    adminView.classList.remove('motion-enter');
+    void adminView.offsetWidth;
+    adminView.classList.add('motion-enter');
     syncAdminInputsFromState();
     renderAdminDashboard();
-    adminEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    adminView.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function submitAdminLogin(event) {
-    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
     const input = document.getElementById('adminPassInput');
     const err = document.getElementById('adminLoginError');
     const entered = String(input?.value || '').trim();
@@ -276,11 +354,11 @@ function submitAdminLogin(event) {
         });
         if (err) err.classList.add('hidden');
         closeAdminLoginModal();
-        revealAdminSection();
-        showToast('Admin panelga muvaffaqiyatli kirildi');
+        revealAdminPanelSection();
+        showToast(appState.lang === 'ru' ? 'Вход в Админ-панель выполнен' : 'Admin panelga muvaffaqiyatli kirildi');
     } else {
         if (err) err.classList.remove('hidden');
-        showToast('Parol noto‘g‘ri!', 'error');
+        showToast(appState.lang === 'ru' ? 'Неверный пароль!' : 'Parol noto‘g‘ri!', 'error');
     }
 }
 
@@ -288,9 +366,9 @@ function logoutAdminPanel() {
     commitState((st) => {
         st.adminAuthenticated = false;
     });
-    const adminEl = document.getElementById('adminView');
-    if (adminEl) adminEl.classList.add('hidden');
-    showToast('Admin panel yopildi');
+    const adminView = document.getElementById('adminView');
+    if (adminView) adminView.classList.add('hidden');
+    showToast(appState.lang === 'ru' ? 'Админ-панель закрыта' : 'Admin panel yopildi');
 }
 
 function resetDemoState() {
@@ -298,31 +376,33 @@ function resetDemoState() {
     saveState();
     populateCarSelects();
     setLanguage(appState.lang);
-    renderQueueSection();
-    renderReviewsSection();
+    renderLiveQueue();
+    renderReviews();
     renderAdminDashboard();
-    showToast('Ma’lumotlar standart holatga qaytarildi');
+    showToast(appState.lang === 'ru' ? 'Данные сброшены к стандарту' : 'Ma’lumotlar standart holatga qaytarildi');
 }
 
 function handleBrandSecretTap() {
     brandTapCount += 1;
-    clearTimeout(brandTapTimer);
-    brandTapTimer = setTimeout(() => {
-        brandTapCount = 0;
-    }, 2000);
-
+    if (brandTapTimer) {
+        clearTimeout(brandTapTimer);
+    }
     if (brandTapCount >= 5) {
         brandTapCount = 0;
         if (appState.adminAuthenticated) {
-            revealAdminSection();
-            showToast('Admin panel ochildi');
+            revealAdminPanelSection();
+            showToast(appState.lang === 'ru' ? 'Открываем Админ-панель...' : 'Admin panel ochilmoqda...');
         } else {
             openAdminLoginModal();
         }
+        return;
     }
+    brandTapTimer = setTimeout(() => {
+        brandTapCount = 0;
+    }, 1800);
 }
 
-/* ==================== TARJIMALAR VA EKRANGA CHIZISH ==================== */
+/* ==================== TIL (UZ / RU) ==================== */
 const i18n = {
     uz: {
         nav_home: 'Asosiy',
@@ -336,7 +416,9 @@ const i18n = {
         hero_badge: "PREMIUM TINT • O'ZBEKISTON AVTO STUDIYASI",
         hero_title_1: 'PREMIUM TINT',
         hero_title_2: 'AVTOMOBIL TONIROVKA VA HIMOYA',
-        hero_desc: 'Malibu, Gentra, Cobalt, Tracker va boshqa mashinalar uchun quyoshdan himoya va oyna qoraytirish xizmati.',
+        hero_desc: 'Malibu, Gentra, Cobalt, Tracker va boshqa mashinalar uchun quyoshdan himoya va oyna qoraytirish xizmati. 70% gacha Solntsezashchita standarti va shaffof navbat.',
+        master_role_label: 'Usta / Mutaxassis',
+        master_exp_label: 'Tajriba',
         hero_btn_book: 'Navbatga yozilish',
         hero_btn_queue: 'Navbatdagi mashinalar',
         work_hours_label: 'Ish vaqti',
@@ -359,7 +441,7 @@ const i18n = {
         calc_use_btn: 'Shu tanlov bilan bron qilish',
         book_kicker: 'Onlayn Navbat',
         book_heading: 'Bron qilish formasi',
-        book_sub: 'Ma’lumotlarni kiriting — ariza darhol Admin panel va Telegram botga yuboriladi.',
+        book_sub: 'Ma’lumotlarni kiriting — ariza darhol Admin panel va navbat ro‘yxatiga qo‘shiladi.',
         f_name: 'Ismingiz *',
         f_phone: 'Telefon raqami *',
         f_car: 'Avtomobil rusumi *',
@@ -367,7 +449,7 @@ const i18n = {
         f_tint: 'Qoraytirish / Himoya *',
         f_date: 'Sana *',
         f_slot: 'Vaqt oralig‘i (06:00 — 22:00) *',
-        permit_full: 'Solntsezashchita (quyoshdan himoya) standarti: yorug‘lik o‘tkazish ko‘rsatkichi 70% gacha ruxsat etilgan — undan past ko‘rsatkich jarimaga sabab bo‘ladi.'
+        permit_full: 'Solntsezashchita (quyoshdan himoya) standarti: yorug‘lik o‘tkazish ko‘rsatkichi 70% gacha ruxsat etilgan — undan past ko‘rsatkich jarimaga sabab bo‘ladi. Orqa yon va orqa oynalar qonuniy me’yorlar asosida qoraytiriladi, ruxsatnoma BHM asosida rasmiylashtiriladi.'
     },
     ru: {
         nav_home: 'Главная',
@@ -381,7 +463,9 @@ const i18n = {
         hero_badge: 'PREMIUM TINT • АВТОСТУДИЯ УЗБЕКИСТАНА',
         hero_title_1: 'PREMIUM TINT',
         hero_title_2: 'ТОНИРОВКА И ЗАЩИТА АВТО',
-        hero_desc: 'Профессиональная тонировка и защита стекол для Malibu, Gentra, Cobalt, Tracker и других авто.',
+        hero_desc: 'Солнцезащита и тонировка для Malibu, Gentra, Cobalt, Tracker и других авто. Стандарт солнцезащиты до 70% и прозрачная очередь.',
+        master_role_label: 'Мастер / Специалист',
+        master_exp_label: 'Опыт',
         hero_btn_book: 'Записаться онлайн',
         hero_btn_queue: 'Машины в очереди',
         work_hours_label: 'Время работы',
@@ -404,7 +488,7 @@ const i18n = {
         calc_use_btn: 'Записаться с этим выбором',
         book_kicker: 'Онлайн Запись',
         book_heading: 'Форма бронирования',
-        book_sub: 'Заполните данные — заявка сразу попадет в Админ-панель и Telegram-бот.',
+        book_sub: 'Заполните данные — заявка сразу попадет в Админ-панель и очередь.',
         f_name: 'Ваше имя *',
         f_phone: 'Телефон *',
         f_car: 'Модель авто *',
@@ -412,7 +496,7 @@ const i18n = {
         f_tint: 'Пленка / % *',
         f_date: 'Дата *',
         f_slot: 'Свободное время (06:00 — 22:00) *',
-        permit_full: 'Стандарт солнцезащиты: пропускание света разрешено до 70% — показатель ниже приводит к штрафу.'
+        permit_full: 'Стандарт солнцезащиты: пропускание света разрешено до 70% — показатель ниже приводит к штрафу. Задние боковые и заднее стекла обслуживаются по нормам, разрешение оформляется на основе БРВ.'
     }
 };
 
@@ -440,10 +524,10 @@ function setLanguage(lang) {
         }
     });
 
-    const heroMasterEl = document.getElementById('heroMasterText');
-    const heroExpEl = document.getElementById('heroExpText');
     const heroFullNameEl = document.getElementById('heroMasterFullName');
     const heroPhoneEl = document.getElementById('heroMasterPhone');
+    const heroMasterEl = document.getElementById('heroMasterText');
+    const heroExpEl = document.getElementById('heroExpText');
     const heroAddrEl = document.getElementById('heroAddressText');
     const heroMapEl = document.getElementById('heroMapLink');
 
@@ -480,10 +564,137 @@ function setLanguage(lang) {
     populateTimeSlots();
     updateSimulator();
     recalculatePrice();
-    renderQueueSection();
-    renderReviewsSection();
+    renderLiveQueue();
+    renderReviews();
 }
 
+/* ==================== MOTION ZOOM (1-4 BOSQICH) ==================== */
+const motionWindowStepsUz = [
+    {
+        title: '1-bosqich: Mashina umumiy ko‘rinishi',
+        solarText: '10% quyosh o‘tkazish',
+        desc: 'Mashina umumiy ko‘rinishi. Pastga bosing yoki scroll qiling: old oyna yaqinlashadi va 10% quyosh o‘tkazish ko‘rsatiladi.',
+        scale: 1.0,
+        tx: '0%',
+        ty: '0%'
+    },
+    {
+        title: '2-bosqich: Old oyna yaqinlashdi',
+        solarText: '10% quyosh o‘tkazish',
+        desc: 'Old oyna yaqinlashdi — 10% quyosh o‘tkazish. Yana bosing: old shofyоr tomoni yaqinlashib 20% quyosh o‘tkazish ko‘rsatiladi.',
+        scale: 1.28,
+        tx: '0%',
+        ty: '-6%'
+    },
+    {
+        title: '3-bosqich: Old shofyоr tarafi yaqinlashdi',
+        solarText: '20% quyosh o‘tkazish',
+        desc: 'Old shofyоr oynasi yaqinlashdi — 20% quyosh o‘tkazish. Keyingi bosqichda orqa yon oyna va 35% ko‘rsatkich ko‘rinadi.',
+        scale: 1.42,
+        tx: '-8%',
+        ty: '-5%'
+    },
+    {
+        title: '4-bosqich: Orqa yon oyna — 35% quyosh o‘tkazish',
+        solarText: '35% quyosh o‘tkazish',
+        desc: 'Orqa yon oyna va 35% quyosh o‘tkazish ko‘rsatildi. 70% gacha Solntsezashchita esa qonuniy quyoshdan himoya standartidir.',
+        scale: 1.35,
+        tx: '7%',
+        ty: '-4%'
+    }
+];
+
+const motionWindowStepsRu = [
+    {
+        title: 'Шаг 1: Общий вид автомобиля',
+        solarText: '10% пропускание солнца',
+        desc: 'Общий вид автомобиля. Нажмите или прокрутите: лобовое стекло приблизится и покажет 10% пропускания солнца.',
+        scale: 1.0,
+        tx: '0%',
+        ty: '0%'
+    },
+    {
+        title: 'Шаг 2: Приближение лобового стекла',
+        solarText: '10% пропускание солнца',
+        desc: 'Лобовое стекло приближено — 10% пропускание солнца. Далее — сторона водителя и 20% пропускания солнца.',
+        scale: 1.28,
+        tx: '0%',
+        ty: '-6%'
+    },
+    {
+        title: 'Шаг 3: Сторона водителя',
+        solarText: '20% пропускание солнца',
+        desc: 'Сторона водителя приближена — 20% пропускание солнца. Далее — заднее боковое стекло и 35%.',
+        scale: 1.42,
+        tx: '-8%',
+        ty: '-5%'
+    },
+    {
+        title: 'Шаг 4: Заднее боковое — 35% пропускание солнца',
+        solarText: '35% пропускание солнца',
+        desc: 'Показано 35% пропускания солнца. Стандарт солнцезащиты разрешен до 70%.',
+        scale: 1.35,
+        tx: '7%',
+        ty: '-4%'
+    }
+];
+
+let activeMotionStep = 0;
+let introMotionTimer = null;
+
+function applyMotionZoneVisuals(stepIndex) {
+    const safeIdx = Math.max(0, Math.min(3, Number(stepIndex) || 0));
+    activeMotionStep = safeIdx;
+    const steps = appState.lang === 'ru' ? motionWindowStepsRu : motionWindowStepsUz;
+    const step = steps[safeIdx];
+
+    const titleEl = document.getElementById('motionZoneTitle');
+    const badgeEl = document.getElementById('motionSolarPassBadge');
+    const liveBadgeEl = document.getElementById('simLiveScrollZoneBadge');
+    const descEl = document.getElementById('motionZoneDesc');
+    const imgEl = document.getElementById('simulatorPhotoImg');
+
+    if (titleEl) titleEl.textContent = step.title;
+    if (badgeEl) badgeEl.textContent = step.solarText;
+    if (liveBadgeEl) liveBadgeEl.textContent = step.solarText;
+    if (descEl) descEl.textContent = step.desc;
+
+    if (imgEl) {
+        imgEl.style.transform = `scale(${step.scale}) translate(${step.tx}, ${step.ty})`;
+    }
+
+    document.querySelectorAll('.motion-step-pill').forEach((pill, i) => {
+        pill.className = i === safeIdx
+            ? 'motion-step-pill px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold bg-gold text-obsidian transition'
+            : 'motion-step-pill px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold bg-white/10 text-gray-300 hover:text-white transition';
+    });
+}
+
+function setMotionZoneStep(idx) {
+    applyMotionZoneVisuals(idx);
+}
+
+function cycleMotionZoneStep() {
+    applyMotionZoneVisuals((activeMotionStep + 1) % 4);
+}
+
+function replayIntroMotionSequence() {
+    if (introMotionTimer) clearInterval(introMotionTimer);
+    applyMotionZoneVisuals(0);
+    let idx = 0;
+    introMotionTimer = setInterval(() => {
+        idx += 1;
+        if (idx < 4) {
+            applyMotionZoneVisuals(idx);
+        } else {
+            clearInterval(introMotionTimer);
+            introMotionTimer = null;
+        }
+    }, 950);
+    showToast(appState.lang === 'ru' ? 'Анимация запущена' : 'Animatsiya boshlandi');
+}
+
+/* ==================== SIMULYATOR VA KALKULYATOR ==================== */
 function populateCarSelects() {
     ['simCarSelect', 'calcCar', 'bCar'].forEach((id) => {
         const sel = document.getElementById(id);
@@ -521,13 +732,6 @@ function populateTimeSlots() {
     if (prev) slotSel.value = prev;
 }
 
-function updateQueueBadge() {
-    const badge = document.getElementById('headerQueueBadge');
-    if (!badge) return;
-    const activeCount = appState.orders.filter((o) => o.status !== 'completed' && o.status !== 'cancelled').length;
-    badge.textContent = String(activeCount);
-}
-
 function setSimTint(percent) {
     commitState((st) => {
         st.simTint = [5, 15, 35, 70].includes(Number(percent)) ? Number(percent) : 35;
@@ -558,11 +762,24 @@ function updateSimulator() {
     document.querySelectorAll('.sim-tint-btn').forEach((btn) => {
         const t = Number(btn.getAttribute('data-tint'));
         btn.className = t === tint
-            ? 'sim-tint-btn py-2.5 rounded-xl border border-gold bg-gold text-obsidian text-xs sm:text-sm font-bold transition'
-            : 'sim-tint-btn py-2.5 rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition';
+            ? 'sim-tint-btn py-2.5 min-h-[42px] rounded-xl border border-gold bg-gold text-obsidian text-xs sm:text-sm font-bold transition'
+            : 'sim-tint-btn py-2.5 min-h-[42px] rounded-xl border border-white/15 bg-charcoal text-xs sm:text-sm font-bold text-gray-200 hover:border-gold transition';
     });
 
     const opacityMap = { 5: 0.78, 15: 0.62, 35: 0.42, 70: 0.18 };
+    const descMapUz = {
+        5: '5% — Juda qora (Limo)',
+        15: '15% — Qoraytirilgan',
+        35: '35% — O‘rta qoraytirish',
+        70: '70% — Solntsezashchita (Quyoshdan himoya standarti)'
+    };
+    const descMapRu = {
+        5: '5% — Глубокое (Limo)',
+        15: '15% — Темное',
+        35: '35% — Среднее',
+        70: '70% — Солнцезащита (Стандарт до 70%)'
+    };
+
     const overlay = document.getElementById('tintOverlayLayer');
     if (overlay) overlay.style.opacity = String(opacityMap[tint] ?? 0.42);
 
@@ -588,9 +805,16 @@ function updateSimulator() {
     const carLabel = document.getElementById('simActiveCarLabel');
     const tintBadge = document.getElementById('simActiveTintBadge');
     const pctLabel = document.getElementById('simOverlayPercentLabel');
+    const tintDescEl = document.getElementById('simTintDescription');
+
     if (carLabel) carLabel.textContent = carObj ? carObj.name : 'Chevrolet Malibu';
     if (tintBadge) tintBadge.textContent = `${tint}%`;
     if (pctLabel) pctLabel.textContent = `${tint}%`;
+    if (tintDescEl) {
+        tintDescEl.textContent = appState.lang === 'ru' ? descMapRu[tint] : descMapUz[tint];
+    }
+
+    applyMotionZoneVisuals(activeMotionStep);
 }
 
 function setCoverage(cov) {
@@ -600,8 +824,8 @@ function setCoverage(cov) {
     document.querySelectorAll('.cov-btn').forEach((btn) => {
         const active = btn.getAttribute('data-cov') === appState.calcCoverage;
         btn.className = active
-            ? 'cov-btn py-3 px-4 rounded-xl border border-gold bg-gold/15 text-gold-light text-xs sm:text-sm font-semibold text-center transition'
-            : 'cov-btn py-3 px-4 rounded-xl border border-white/15 bg-obsidian text-gray-300 text-xs sm:text-sm font-semibold text-center hover:border-gold/50 transition';
+            ? 'cov-btn py-3 px-4 min-h-[44px] rounded-xl border border-gold bg-gold/15 text-gold-light text-xs sm:text-sm font-semibold text-center transition'
+            : 'cov-btn py-3 px-4 min-h-[44px] rounded-xl border border-white/15 bg-obsidian text-gray-300 text-xs sm:text-sm font-semibold text-center hover:border-gold/50 transition';
     });
     recalculatePrice();
 }
@@ -619,7 +843,8 @@ function recalculatePrice() {
 
     const breakdownEl = document.getElementById('calcBreakdownText');
     if (breakdownEl && car) {
-        breakdownEl.textContent = `${car.name} • ${tintKey}% • ×${(tMult * cMult).toFixed(2)}`;
+        const tintNote = tintKey === 70 ? '70% Solntsezashchita' : `${tintKey}%`;
+        breakdownEl.textContent = `${car.name} • ${tintNote} • ×${(tMult * cMult).toFixed(2)}`;
     }
     return total;
 }
@@ -637,6 +862,13 @@ function applyCalculatorToBooking() {
 }
 
 /* ==================== BUYURTMA, NAVBAT VA SHARHLAR ==================== */
+function updateQueueBadge() {
+    const badge = document.getElementById('headerQueueBadge');
+    if (!badge) return;
+    const activeCount = appState.orders.filter((o) => o.status !== 'completed' && o.status !== 'cancelled').length;
+    badge.textContent = String(activeCount);
+}
+
 function handleBookingSubmit(event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const name = document.getElementById('bName')?.value?.trim();
@@ -648,7 +880,7 @@ function handleBookingSubmit(event) {
     const slot = document.getElementById('bSlot')?.value || '09:00';
 
     if (!name || !phone || !plate) {
-        showToast('Majburiy maydonlarni to‘ldiring', 'error');
+        showToast(appState.lang === 'ru' ? 'Заполните обязательные поля' : 'Majburiy maydonlarni to‘ldiring', 'error');
         return;
     }
 
@@ -666,60 +898,70 @@ function handleBookingSubmit(event) {
             carId: car?.id || carId,
             carName: car?.name || carId,
             plate,
+            color: '',
             tint: tintRaw,
             coverage: st.calcCoverage,
             date,
             slot,
             price,
-            status: 'waiting'
+            status: 'waiting',
+            startedAt: null
         });
     });
 
     updateQueueBadge();
-    renderQueueSection();
+    renderLiveQueue();
     renderAdminDashboard();
-    showToast('Buyurtma saqlandi va navbatga qo‘shildi!');
+    showToast(appState.lang === 'ru' ? 'Заявка добавлена в очередь!' : 'Buyurtma saqlandi va navbatga qo‘shildi!');
     event.target.reset();
     const dateInput = document.getElementById('bDate');
     if (dateInput) dateInput.value = getTodayISO();
 }
 
-function renderQueueSection() {
+function renderLiveQueue() {
     const container = document.getElementById('queueListContainer');
     const banner = document.getElementById('lunchBreakBanner');
     if (banner) {
         banner.classList.toggle('hidden', !appState.lunchBreak?.active);
         if (appState.lunchBreak?.active) {
-            banner.textContent = `Tushlik tanaffusi • Ishga qaytish: ${appState.lunchBreak.resumeTime || '13:00'}`;
+            banner.textContent = appState.lang === 'ru'
+                ? `Обеденный перерыв • Возврат: ${appState.lunchBreak.resumeTime || '13:00'}`
+                : `Tushlik tanaffusi • Ishga qaytish: ${appState.lunchBreak.resumeTime || '13:00'}`;
         }
     }
     if (!container) return;
 
     const activeOrders = appState.orders.filter((o) => o.status !== 'cancelled');
     if (activeOrders.length === 0) {
-        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">Hozircha navbatda mashina yo‘q.</div>`;
+        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">${appState.lang === 'ru' ? 'В очереди пока нет машин.' : 'Hozircha navbatda mashina yo‘q.'}</div>`;
         return;
     }
 
-    const statusLabel = {
+    const statusLabelUz = {
         waiting: 'Navbatda kutmoqda',
         in_progress: 'Jarayonda',
         completed: 'Yakunlangan'
     };
+    const statusLabelRu = {
+        waiting: 'В очереди',
+        in_progress: 'В работе',
+        completed: 'Завершено'
+    };
 
-    container.innerHTML = activeOrders.map((ord) => `
-        <div class="gold-card rounded-2xl p-4 space-y-2">
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-extrabold text-gold">${ord.plate}</span>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-gray-200">
-                    ${statusLabel[ord.status] || ord.status}
-                </span>
+    container.innerHTML = activeOrders.map((ord) => {
+        const sText = appState.lang === 'ru' ? (statusLabelRu[ord.status] || ord.status) : (statusLabelUz[ord.status] || ord.status);
+        return `
+            <div class="gold-card rounded-2xl p-4 space-y-2 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-extrabold text-gold">${ord.plate}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-gray-200">${sText}</span>
+                </div>
+                <div class="text-sm font-bold text-white truncate">${ord.carName} • ${ord.tint}</div>
+                <div class="text-xs text-gray-400">${ord.name} • ${ord.date} (${ord.slot})</div>
+                <div class="text-xs font-semibold text-gold-light pt-1">${formatUZS(ord.price)}</div>
             </div>
-            <div class="text-sm font-bold text-white">${ord.carName} • ${ord.tint}</div>
-            <div class="text-xs text-gray-400">${ord.name} • ${ord.date} (${ord.slot})</div>
-            <div class="text-xs font-semibold text-gold-light pt-1">${formatUZS(ord.price)}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function handleReviewSubmit(event) {
@@ -741,29 +983,29 @@ function handleReviewSubmit(event) {
         });
     });
 
-    renderReviewsSection();
+    renderReviews();
     renderAdminDashboard();
-    showToast('Sharh qo‘shildi!');
+    showToast(appState.lang === 'ru' ? 'Отзыв добавлен!' : 'Sharh qo‘shildi!');
     event.target.reset();
 }
 
-function renderReviewsSection() {
+function renderReviews() {
     const container = document.getElementById('reviewsListContainer');
     if (!container) return;
     const list = appState.reviews.filter((r) => r.approved !== false);
     if (list.length === 0) {
-        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">Hozircha sharhlar yo‘q.</div>`;
+        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">${appState.lang === 'ru' ? 'Отзывов пока нет.' : 'Hozircha sharhlar yo‘q.'}</div>`;
         return;
     }
 
     container.innerHTML = list.map((rev) => `
-        <div class="gold-card rounded-2xl p-4 space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-white">${rev.name}</span>
-                <span class="text-xs text-gold">${'★'.repeat(Number(rev.rating) || 5)}</span>
+        <div class="gold-card rounded-2xl p-4 space-y-2 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-sm font-bold text-white truncate">${rev.name}</span>
+                <span class="text-xs text-gold shrink-0">${'★'.repeat(Number(rev.rating) || 5)}</span>
             </div>
             <div class="text-[11px] text-gray-400">${rev.carPlate}</div>
-            <p class="text-xs text-gray-200 leading-relaxed">${rev.comment}</p>
+            <p class="text-xs text-gray-200 leading-relaxed break-words">${rev.comment}</p>
         </div>
     `).join('');
 }
@@ -825,7 +1067,7 @@ function saveAdminMasterProfile(event) {
     });
 
     setLanguage(appState.lang);
-    showToast('Usta va studiya ma’lumotlari saqlandi');
+    showToast(appState.lang === 'ru' ? 'Профиль сохранен' : 'Usta va studiya ma’lumotlari saqlandi');
 }
 
 function saveAdminLunchAndTg(event) {
@@ -840,8 +1082,8 @@ function saveAdminLunchAndTg(event) {
         st.telegram = { ...st.telegram, chatId, botToken };
     });
 
-    renderQueueSection();
-    showToast('Tushlik va Telegram sozlamalari saqlandi');
+    renderLiveQueue();
+    showToast(appState.lang === 'ru' ? 'Настройки сохранены' : 'Tushlik va Telegram sozlamalari saqlandi');
 }
 
 function handleAdminAddCar(event) {
@@ -850,7 +1092,7 @@ function handleAdminAddCar(event) {
     const basePrice = Number(document.getElementById('admCarPrice')?.value || 0);
     const type = document.getElementById('admCarType')?.value === 'suv' ? 'suv' : 'sedan';
     if (!name || basePrice < 50000) {
-        showToast('Mashina nomi va narxini to‘g‘ri kiriting', 'error');
+        showToast(appState.lang === 'ru' ? 'Проверьте название и цену' : 'Mashina nomi va narxini to‘g‘ri kiriting', 'error');
         return;
     }
 
@@ -864,12 +1106,12 @@ function handleAdminAddCar(event) {
     recalculatePrice();
     renderAdminDashboard();
     event.target.reset();
-    showToast('Yangi mashina saqlandi');
+    showToast(appState.lang === 'ru' ? 'Автомобиль добавлен' : 'Yangi mashina saqlandi');
 }
 
 function deleteAdminCar(carId) {
     if (appState.cars.length <= 1) {
-        showToast('Kamida 1 ta mashina qolishi kerak', 'error');
+        showToast(appState.lang === 'ru' ? 'Должна остаться хотя бы 1 машина' : 'Kamida 1 ta mashina qolishi kerak', 'error');
         return;
     }
     commitState((st) => {
@@ -880,7 +1122,7 @@ function deleteAdminCar(carId) {
     updateSimulator();
     recalculatePrice();
     renderAdminDashboard();
-    showToast('Mashina o‘chirildi');
+    showToast(appState.lang === 'ru' ? 'Автомобиль удален' : 'Mashina o‘chirildi');
 }
 
 function updateAdminOrderStatus(orderId, status) {
@@ -889,9 +1131,9 @@ function updateAdminOrderStatus(orderId, status) {
         if (ord) ord.status = status;
     });
     updateQueueBadge();
-    renderQueueSection();
+    renderLiveQueue();
     renderAdminDashboard();
-    showToast('Buyurtma holati yangilandi');
+    showToast(appState.lang === 'ru' ? 'Статус обновлен' : 'Buyurtma holati yangilandi');
 }
 
 function deleteAdminOrder(orderId) {
@@ -899,9 +1141,9 @@ function deleteAdminOrder(orderId) {
         st.orders = st.orders.filter((o) => o.id !== orderId);
     });
     updateQueueBadge();
-    renderQueueSection();
+    renderLiveQueue();
     renderAdminDashboard();
-    showToast('Buyurtma o‘chirildi');
+    showToast(appState.lang === 'ru' ? 'Заявка удалена' : 'Buyurtma o‘chirildi');
 }
 
 function toggleAdminReviewApproval(revId) {
@@ -909,31 +1151,31 @@ function toggleAdminReviewApproval(revId) {
         const rev = st.reviews.find((r) => r.id === revId);
         if (rev) rev.approved = !rev.approved;
     });
-    renderReviewsSection();
+    renderReviews();
     renderAdminDashboard();
-    showToast('Sharh holati o‘zgardi');
+    showToast(appState.lang === 'ru' ? 'Статус отзыва изменен' : 'Sharh holati o‘zgardi');
 }
 
 function deleteAdminReview(revId) {
     commitState((st) => {
         st.reviews = st.reviews.filter((r) => r.id !== revId);
     });
-    renderReviewsSection();
+    renderReviews();
     renderAdminDashboard();
-    showToast('Sharh o‘chirildi');
+    showToast(appState.lang === 'ru' ? 'Отзыв удален' : 'Sharh o‘chirildi');
 }
 
 function renderAdminDashboard() {
     const carsEl = document.getElementById('adminCarsList');
     if (carsEl) {
         carsEl.innerHTML = appState.cars.map((car) => `
-            <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex items-center justify-between gap-2">
-                <div>
-                    <div class="text-xs font-bold text-white">${car.name}</div>
+            <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex items-center justify-between gap-2 min-w-0">
+                <div class="min-w-0">
+                    <div class="text-xs font-bold text-white truncate">${car.name}</div>
                     <div class="text-[11px] text-gold-light">${formatUZS(car.basePrice)}</div>
                 </div>
                 <button type="button" onclick="deleteAdminCar('${car.id}')"
-                    class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200">
+                    class="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200 shrink-0">
                     O‘chirish
                 </button>
             </div>
@@ -945,20 +1187,20 @@ function renderAdminDashboard() {
         ordersEl.innerHTML = appState.orders.length === 0
             ? `<div class="text-xs text-gray-400">Buyurtmalar yo‘q.</div>`
             : appState.orders.map((ord) => `
-                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex flex-wrap items-center justify-between gap-3">
-                    <div class="text-xs space-y-0.5">
+                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="text-xs space-y-0.5 min-w-0">
                         <div class="font-bold text-white">${ord.plate} • ${ord.carName} (${ord.tint})</div>
                         <div class="text-gray-400">${ord.name} — ${ord.phone} • ${ord.date} ${ord.slot} • ${formatUZS(ord.price)}</div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 shrink-0">
                         <select onchange="updateAdminOrderStatus('${ord.id}', this.value)"
-                            class="bg-charcoal border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                            class="flex-1 sm:flex-initial bg-charcoal border border-white/15 rounded-lg px-2.5 py-2 min-h-[38px] text-xs text-white">
                             <option value="waiting" ${ord.status === 'waiting' ? 'selected' : ''}>Kutmoqda</option>
                             <option value="in_progress" ${ord.status === 'in_progress' ? 'selected' : ''}>Jarayonda</option>
                             <option value="completed" ${ord.status === 'completed' ? 'selected' : ''}>Yakunlangan</option>
                         </select>
                         <button type="button" onclick="deleteAdminOrder('${ord.id}')"
-                            class="px-2.5 py-1.5 rounded-lg bg-red-950/70 border border-red-500/30 text-xs font-bold text-red-200">
+                            class="px-3 py-2 min-h-[38px] rounded-lg bg-red-950/70 border border-red-500/30 text-xs font-bold text-red-200">
                             ✕
                         </button>
                     </div>
@@ -971,19 +1213,19 @@ function renderAdminDashboard() {
         revsEl.innerHTML = appState.reviews.length === 0
             ? `<div class="text-xs text-gray-400">Sharhlar yo‘q.</div>`
             : appState.reviews.map((rev) => `
-                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-bold text-white">${rev.name} (${rev.carPlate})</span>
-                        <span class="text-gold">${'★'.repeat(Number(rev.rating) || 5)}</span>
+                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 space-y-2 min-w-0">
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                        <span class="font-bold text-white truncate">${rev.name} (${rev.carPlate})</span>
+                        <span class="text-gold shrink-0">${'★'.repeat(Number(rev.rating) || 5)}</span>
                     </div>
-                    <p class="text-xs text-gray-300">${rev.comment}</p>
+                    <p class="text-xs text-gray-300 break-words">${rev.comment}</p>
                     <div class="flex items-center gap-2 pt-1">
                         <button type="button" onclick="toggleAdminReviewApproval('${rev.id}')"
-                            class="px-2.5 py-1 rounded-lg bg-charcoal border border-white/15 text-[11px] font-bold text-gold-light">
+                            class="px-3 py-1.5 min-h-[34px] rounded-lg bg-charcoal border border-white/15 text-[11px] font-bold text-gold-light">
                             ${rev.approved !== false ? 'Yashirish' : 'Tasdiqlash'}
                         </button>
                         <button type="button" onclick="deleteAdminReview('${rev.id}')"
-                            class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200">
+                            class="px-3 py-1.5 min-h-[34px] rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200">
                             O‘chirish
                         </button>
                     </div>
@@ -995,21 +1237,10 @@ function renderAdminDashboard() {
 /* ==================== NAVIGATSIYA VA ISHGA TUSHIRISH ==================== */
 function navigateTo(sectionId, event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
-    const el = document.getElementById(sectionId);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function setMotionZoneStep(idx) {
-    activeMotionStep = Math.max(0, Math.min(3, Number(idx) || 0));
-}
-
-function cycleMotionZoneStep() {
-    setMotionZoneStep((activeMotionStep + 1) % 4);
-}
-
-function replayIntroMotionSequence() {
-    setMotionZoneStep(0);
-    showToast('Animatsiya boshlandi');
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1021,6 +1252,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setLanguage(appState.lang);
 
     if (appState.adminAuthenticated) {
-        revealAdminSection();
+        revealAdminPanelSection();
     }
 });
