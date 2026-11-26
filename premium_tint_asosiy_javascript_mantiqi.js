@@ -25,7 +25,6 @@ function handleSimulatorPhotoError() {
     }
 }
 
-// HTML img onload/onerror lari har doim topishi uchun window ga biriktiramiz
 window.handleSimulatorPhotoLoad = handleSimulatorPhotoLoad;
 window.handleSimulatorPhotoError = handleSimulatorPhotoError;
 
@@ -53,12 +52,6 @@ function createDefaultState() {
             ruExp: '5+ лет опыта'
         },
         workshopAddress: 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri',
-        socials: {
-            telegram: 'https://t.me/',
-            instagram: 'https://instagram.com/',
-            facebook: 'https://facebook.com/',
-            extra: ''
-        },
         lunchBreak: {
             active: false,
             resumeTime: '13:00'
@@ -94,14 +87,12 @@ function createDefaultState() {
                 carId: 'malibu',
                 carName: 'Chevrolet Malibu',
                 plate: '01 A 777 AA',
-                color: 'Qora',
-                tint: 35,
+                tint: '35%',
                 coverage: 'rear',
                 date: getTodayISO(),
                 slot: '08:00',
                 price: 1450000,
-                status: 'in_progress',
-                startedAt: '08:05'
+                status: 'in_progress'
             }
         ],
         reviews: [
@@ -162,20 +153,17 @@ function sanitizeState(parsed) {
             ruExp: String(parsed.masterInfo?.ruExp ?? base.masterInfo.ruExp).trim() || base.masterInfo.ruExp
         },
         workshopAddress: String(parsed.workshopAddress ?? base.workshopAddress).trim() || base.workshopAddress,
-        socials: {
-            ...base.socials,
-            ...(parsed.socials && typeof parsed.socials === 'object' ? parsed.socials : {})
-        },
         lunchBreak: {
-            ...base.lunchBreak,
-            ...(parsed.lunchBreak && typeof parsed.lunchBreak === 'object' ? parsed.lunchBreak : {})
+            active: Boolean(parsed.lunchBreak?.active),
+            resumeTime: String(parsed.lunchBreak?.resumeTime || '13:00').trim() || '13:00'
         },
         telegram: {
-            ...base.telegram,
-            ...(parsed.telegram && typeof parsed.telegram === 'object' ? parsed.telegram : {}),
+            enabled: parsed.telegram?.enabled !== false,
+            botToken: String(parsed.telegram?.botToken || ''),
+            chatId: String(parsed.telegram?.chatId || ''),
             logs: Array.isArray(parsed.telegram?.logs) ? parsed.telegram.logs : []
         },
-        cars: cleanCars.length > 0 ? cleanCars : base.cars,
+        cars: cleanCars,
         tintMultipliers: {
             5: Number(parsed.tintMultipliers?.[5] ?? base.tintMultipliers[5]),
             15: Number(parsed.tintMultipliers?.[15] ?? base.tintMultipliers[15]),
@@ -221,7 +209,6 @@ function saveState() {
     }
 }
 
-// Har qanday o'zgarishni xavfsiz saqlash yordamchi funksiyasi
 function commitState(mutatorFn) {
     if (typeof mutatorFn === 'function') {
         mutatorFn(appState);
@@ -250,6 +237,92 @@ function showToast(message, type = 'success') {
     }, 3200);
 }
 
+/* ==================== PAROL OYNASI VA ADMIN KIRISH ==================== */
+function openAdminLoginModal() {
+    const modal = document.getElementById('adminLoginModal');
+    const input = document.getElementById('adminPassInput');
+    const err = document.getElementById('adminLoginError');
+    if (err) err.classList.add('hidden');
+    if (modal) modal.classList.remove('hidden');
+    if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 50);
+    }
+}
+
+function closeAdminLoginModal() {
+    const modal = document.getElementById('adminLoginModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function revealAdminSection() {
+    const adminEl = document.getElementById('adminView');
+    if (!adminEl) return;
+    adminEl.classList.remove('hidden');
+    syncAdminInputsFromState();
+    renderAdminDashboard();
+    adminEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function submitAdminLogin(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const input = document.getElementById('adminPassInput');
+    const err = document.getElementById('adminLoginError');
+    const entered = String(input?.value || '').trim();
+
+    if (entered === ADMIN_PASS) {
+        commitState((st) => {
+            st.adminAuthenticated = true;
+        });
+        if (err) err.classList.add('hidden');
+        closeAdminLoginModal();
+        revealAdminSection();
+        showToast('Admin panelga muvaffaqiyatli kirildi');
+    } else {
+        if (err) err.classList.remove('hidden');
+        showToast('Parol noto‘g‘ri!', 'error');
+    }
+}
+
+function logoutAdminPanel() {
+    commitState((st) => {
+        st.adminAuthenticated = false;
+    });
+    const adminEl = document.getElementById('adminView');
+    if (adminEl) adminEl.classList.add('hidden');
+    showToast('Admin panel yopildi');
+}
+
+function resetDemoState() {
+    appState = createDefaultState();
+    saveState();
+    populateCarSelects();
+    setLanguage(appState.lang);
+    renderQueueSection();
+    renderReviewsSection();
+    renderAdminDashboard();
+    showToast('Ma’lumotlar standart holatga qaytarildi');
+}
+
+function handleBrandSecretTap() {
+    brandTapCount += 1;
+    clearTimeout(brandTapTimer);
+    brandTapTimer = setTimeout(() => {
+        brandTapCount = 0;
+    }, 2000);
+
+    if (brandTapCount >= 5) {
+        brandTapCount = 0;
+        if (appState.adminAuthenticated) {
+            revealAdminSection();
+            showToast('Admin panel ochildi');
+        } else {
+            openAdminLoginModal();
+        }
+    }
+}
+
+/* ==================== TARJIMALAR VA EKRANGA CHIZISH ==================== */
 const i18n = {
     uz: {
         nav_home: 'Asosiy',
@@ -407,7 +480,8 @@ function setLanguage(lang) {
     populateTimeSlots();
     updateSimulator();
     recalculatePrice();
-    syncAdminInputsFromState();
+    renderQueueSection();
+    renderReviewsSection();
 }
 
 function populateCarSelects() {
@@ -562,82 +636,7 @@ function applyCalculatorToBooking() {
     navigateTo('booking');
 }
 
-function syncAdminInputsFromState() {
-    const uzNameEl = document.getElementById('admMasterNameUz');
-    const ruNameEl = document.getElementById('admMasterNameRu');
-    const ageEl = document.getElementById('admMasterAge');
-    const phoneEl = document.getElementById('admMasterPhone');
-    const addrEl = document.getElementById('admWorkshopAddress');
-
-    if (uzNameEl) uzNameEl.value = appState.masterInfo?.uzName || "Ma'rufjon Kudratov";
-    if (ruNameEl) ruNameEl.value = appState.masterInfo?.ruName || 'Маруфжон Кудратов';
-    if (phoneEl) phoneEl.value = appState.masterInfo?.phone || '+998 90 123 45 67';
-    if (addrEl) addrEl.value = appState.workshopAddress || '';
-
-    if (ageEl) {
-        const match = String(appState.masterInfo?.uzRole || '').match(/(\d+)/);
-        ageEl.value = match ? Number(match[1]) : 28;
-    }
-}
-
-function saveAdminMasterProfile(event) {
-    if (event && typeof event.preventDefault === 'function') event.preventDefault();
-    const uzName = (document.getElementById('admMasterNameUz')?.value || "Ma'rufjon Kudratov").trim();
-    const ruName = (document.getElementById('admMasterNameRu')?.value || 'Маруфжон Кудратов').trim();
-    const ageNum = Math.min(90, Math.max(18, parseInt(document.getElementById('admMasterAge')?.value, 10) || 28));
-    const phone = (document.getElementById('admMasterPhone')?.value || '+998 90 123 45 67').trim();
-    const addrInput = document.getElementById('admWorkshopAddress')?.value?.trim();
-
-    commitState((st) => {
-        st.masterInfo = {
-            ...st.masterInfo,
-            uzName,
-            ruName,
-            phone,
-            uzRole: `${ageNum} yoshlik mutaxassis`,
-            ruRole: `Специалист ${ageNum} лет`
-        };
-        if (addrInput) {
-            st.workshopAddress = addrInput;
-        }
-    });
-
-    setLanguage(appState.lang);
-    showToast('Usta ma’lumotlari saqlandi');
-}
-
-// Yangi mashina qo'shish (Admin paneldan chaqirish mumkin)
-function addOrUpdateCar({ id, name, basePrice, type = 'sedan', photoUrl }) {
-    const cleanName = String(name || '').trim();
-    const cleanPrice = Math.max(50000, Number(basePrice) || 0);
-    if (!cleanName || !cleanPrice) return false;
-
-    const cleanId = id
-        ? String(id).trim()
-        : cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString().slice(-4);
-
-    commitState((st) => {
-        const idx = st.cars.findIndex((c) => c.id === cleanId);
-        const item = {
-            id: cleanId,
-            name: cleanName,
-            basePrice: cleanPrice,
-            type: type === 'suv' ? 'suv' : 'sedan',
-            photoUrl: (photoUrl && photoUrl.trim()) ? photoUrl.trim() : DEFAULT_SIM_PHOTO_URL
-        };
-        if (idx >= 0) {
-            st.cars[idx] = item;
-        } else {
-            st.cars.push(item);
-        }
-    });
-
-    populateCarSelects();
-    updateSimulator();
-    recalculatePrice();
-    return true;
-}
-
+/* ==================== BUYURTMA, NAVBAT VA SHARHLAR ==================== */
 function handleBookingSubmit(event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const name = document.getElementById('bName')?.value?.trim();
@@ -660,7 +659,7 @@ function handleBookingSubmit(event) {
     const price = Math.round(((car?.basePrice || 1100000) * tMult * cMult) / 1000) * 1000;
 
     commitState((st) => {
-        st.orders.push({
+        st.orders.unshift({
             id: 'ORD-' + Date.now().toString().slice(-5),
             name,
             phone,
@@ -672,38 +671,328 @@ function handleBookingSubmit(event) {
             date,
             slot,
             price,
-            status: 'waiting',
-            createdAt: new Date().toISOString()
+            status: 'waiting'
         });
     });
 
     updateQueueBadge();
+    renderQueueSection();
+    renderAdminDashboard();
     showToast('Buyurtma saqlandi va navbatga qo‘shildi!');
     event.target.reset();
     const dateInput = document.getElementById('bDate');
     if (dateInput) dateInput.value = getTodayISO();
 }
 
-function handleBrandSecretTap() {
-    brandTapCount += 1;
-    clearTimeout(brandTapTimer);
-    brandTapTimer = setTimeout(() => {
-        brandTapCount = 0;
-    }, 1800);
-
-    if (brandTapCount >= 5) {
-        brandTapCount = 0;
-        const adminEl = document.getElementById('adminView') || document.getElementById('adminPanel');
-        if (adminEl) {
-            adminEl.classList.remove('hidden');
-            adminEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            showToast('Admin panel ochildi');
-        } else {
-            showToast('Admin ma’lumotlari saqlash rejimi faol');
+function renderQueueSection() {
+    const container = document.getElementById('queueListContainer');
+    const banner = document.getElementById('lunchBreakBanner');
+    if (banner) {
+        banner.classList.toggle('hidden', !appState.lunchBreak?.active);
+        if (appState.lunchBreak?.active) {
+            banner.textContent = `Tushlik tanaffusi • Ishga qaytish: ${appState.lunchBreak.resumeTime || '13:00'}`;
         }
+    }
+    if (!container) return;
+
+    const activeOrders = appState.orders.filter((o) => o.status !== 'cancelled');
+    if (activeOrders.length === 0) {
+        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">Hozircha navbatda mashina yo‘q.</div>`;
+        return;
+    }
+
+    const statusLabel = {
+        waiting: 'Navbatda kutmoqda',
+        in_progress: 'Jarayonda',
+        completed: 'Yakunlangan'
+    };
+
+    container.innerHTML = activeOrders.map((ord) => `
+        <div class="gold-card rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-extrabold text-gold">${ord.plate}</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-gray-200">
+                    ${statusLabel[ord.status] || ord.status}
+                </span>
+            </div>
+            <div class="text-sm font-bold text-white">${ord.carName} • ${ord.tint}</div>
+            <div class="text-xs text-gray-400">${ord.name} • ${ord.date} (${ord.slot})</div>
+            <div class="text-xs font-semibold text-gold-light pt-1">${formatUZS(ord.price)}</div>
+        </div>
+    `).join('');
+}
+
+function handleReviewSubmit(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const name = document.getElementById('revName')?.value?.trim();
+    const carPlate = document.getElementById('revCarPlate')?.value?.trim();
+    const rating = Number(document.getElementById('revRating')?.value || 5);
+    const comment = document.getElementById('revComment')?.value?.trim();
+    if (!name || !carPlate || !comment) return;
+
+    commitState((st) => {
+        st.reviews.unshift({
+            id: 'REV-' + Date.now().toString().slice(-4),
+            name,
+            carPlate,
+            rating,
+            comment,
+            approved: true
+        });
+    });
+
+    renderReviewsSection();
+    renderAdminDashboard();
+    showToast('Sharh qo‘shildi!');
+    event.target.reset();
+}
+
+function renderReviewsSection() {
+    const container = document.getElementById('reviewsListContainer');
+    if (!container) return;
+    const list = appState.reviews.filter((r) => r.approved !== false);
+    if (list.length === 0) {
+        container.innerHTML = `<div class="gold-card rounded-2xl p-5 text-xs text-gray-400">Hozircha sharhlar yo‘q.</div>`;
+        return;
+    }
+
+    container.innerHTML = list.map((rev) => `
+        <div class="gold-card rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-white">${rev.name}</span>
+                <span class="text-xs text-gold">${'★'.repeat(Number(rev.rating) || 5)}</span>
+            </div>
+            <div class="text-[11px] text-gray-400">${rev.carPlate}</div>
+            <p class="text-xs text-gray-200 leading-relaxed">${rev.comment}</p>
+        </div>
+    `).join('');
+}
+
+/* ==================== ADMIN BOSHQARUV FUNKSIYALARI ==================== */
+function syncAdminInputsFromState() {
+    const uzNameEl = document.getElementById('admMasterNameUz');
+    const ruNameEl = document.getElementById('admMasterNameRu');
+    const ageEl = document.getElementById('admMasterAge');
+    const phoneEl = document.getElementById('admMasterPhone');
+    const expUzEl = document.getElementById('admMasterExpUz');
+    const expRuEl = document.getElementById('admMasterExpRu');
+    const addrEl = document.getElementById('admWorkshopAddress');
+    const lunchActiveEl = document.getElementById('admLunchActive');
+    const lunchResumeEl = document.getElementById('admLunchResume');
+    const tgChatEl = document.getElementById('admTgChatId');
+    const tgTokenEl = document.getElementById('admTgToken');
+
+    if (uzNameEl) uzNameEl.value = appState.masterInfo?.uzName || "Ma'rufjon Kudratov";
+    if (ruNameEl) ruNameEl.value = appState.masterInfo?.ruName || 'Маруфжон Кудратов';
+    if (phoneEl) phoneEl.value = appState.masterInfo?.phone || '+998 90 123 45 67';
+    if (expUzEl) expUzEl.value = appState.masterInfo?.uzExp || '5+ yillik tajriba';
+    if (expRuEl) expRuEl.value = appState.masterInfo?.ruExp || '5+ лет опыта';
+    if (addrEl) addrEl.value = appState.workshopAddress || '';
+
+    if (ageEl) {
+        const match = String(appState.masterInfo?.uzRole || '').match(/(\d+)/);
+        ageEl.value = match ? Number(match[1]) : 28;
+    }
+
+    if (lunchActiveEl) lunchActiveEl.checked = Boolean(appState.lunchBreak?.active);
+    if (lunchResumeEl) lunchResumeEl.value = appState.lunchBreak?.resumeTime || '13:00';
+    if (tgChatEl) tgChatEl.value = appState.telegram?.chatId || '';
+    if (tgTokenEl) tgTokenEl.value = appState.telegram?.botToken || '';
+}
+
+function saveAdminMasterProfile(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const uzName = (document.getElementById('admMasterNameUz')?.value || "Ma'rufjon Kudratov").trim();
+    const ruName = (document.getElementById('admMasterNameRu')?.value || 'Маруфжон Кудратов').trim();
+    const ageNum = Math.min(90, Math.max(18, parseInt(document.getElementById('admMasterAge')?.value, 10) || 28));
+    const phone = (document.getElementById('admMasterPhone')?.value || '+998 90 123 45 67').trim();
+    const uzExp = (document.getElementById('admMasterExpUz')?.value || '5+ yillik tajriba').trim();
+    const ruExp = (document.getElementById('admMasterExpRu')?.value || '5+ лет опыта').trim();
+    const addrInput = document.getElementById('admWorkshopAddress')?.value?.trim();
+
+    commitState((st) => {
+        st.masterInfo = {
+            ...st.masterInfo,
+            uzName,
+            ruName,
+            phone,
+            uzExp,
+            ruExp,
+            uzRole: `${ageNum} yoshlik mutaxassis`,
+            ruRole: `Специалист ${ageNum} лет`
+        };
+        if (addrInput) st.workshopAddress = addrInput;
+    });
+
+    setLanguage(appState.lang);
+    showToast('Usta va studiya ma’lumotlari saqlandi');
+}
+
+function saveAdminLunchAndTg(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const active = Boolean(document.getElementById('admLunchActive')?.checked);
+    const resumeTime = (document.getElementById('admLunchResume')?.value || '13:00').trim() || '13:00';
+    const chatId = (document.getElementById('admTgChatId')?.value || '').trim();
+    const botToken = (document.getElementById('admTgToken')?.value || '').trim();
+
+    commitState((st) => {
+        st.lunchBreak = { active, resumeTime };
+        st.telegram = { ...st.telegram, chatId, botToken };
+    });
+
+    renderQueueSection();
+    showToast('Tushlik va Telegram sozlamalari saqlandi');
+}
+
+function handleAdminAddCar(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const name = document.getElementById('admCarName')?.value?.trim();
+    const basePrice = Number(document.getElementById('admCarPrice')?.value || 0);
+    const type = document.getElementById('admCarType')?.value === 'suv' ? 'suv' : 'sedan';
+    if (!name || basePrice < 50000) {
+        showToast('Mashina nomi va narxini to‘g‘ri kiriting', 'error');
+        return;
+    }
+
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString().slice(-4);
+    commitState((st) => {
+        st.cars.push({ id, name, basePrice, type, photoUrl: DEFAULT_SIM_PHOTO_URL });
+    });
+
+    populateCarSelects();
+    updateSimulator();
+    recalculatePrice();
+    renderAdminDashboard();
+    event.target.reset();
+    showToast('Yangi mashina saqlandi');
+}
+
+function deleteAdminCar(carId) {
+    if (appState.cars.length <= 1) {
+        showToast('Kamida 1 ta mashina qolishi kerak', 'error');
+        return;
+    }
+    commitState((st) => {
+        st.cars = st.cars.filter((c) => c.id !== carId);
+        if (st.simCarId === carId) st.simCarId = st.cars[0].id;
+    });
+    populateCarSelects();
+    updateSimulator();
+    recalculatePrice();
+    renderAdminDashboard();
+    showToast('Mashina o‘chirildi');
+}
+
+function updateAdminOrderStatus(orderId, status) {
+    commitState((st) => {
+        const ord = st.orders.find((o) => o.id === orderId);
+        if (ord) ord.status = status;
+    });
+    updateQueueBadge();
+    renderQueueSection();
+    renderAdminDashboard();
+    showToast('Buyurtma holati yangilandi');
+}
+
+function deleteAdminOrder(orderId) {
+    commitState((st) => {
+        st.orders = st.orders.filter((o) => o.id !== orderId);
+    });
+    updateQueueBadge();
+    renderQueueSection();
+    renderAdminDashboard();
+    showToast('Buyurtma o‘chirildi');
+}
+
+function toggleAdminReviewApproval(revId) {
+    commitState((st) => {
+        const rev = st.reviews.find((r) => r.id === revId);
+        if (rev) rev.approved = !rev.approved;
+    });
+    renderReviewsSection();
+    renderAdminDashboard();
+    showToast('Sharh holati o‘zgardi');
+}
+
+function deleteAdminReview(revId) {
+    commitState((st) => {
+        st.reviews = st.reviews.filter((r) => r.id !== revId);
+    });
+    renderReviewsSection();
+    renderAdminDashboard();
+    showToast('Sharh o‘chirildi');
+}
+
+function renderAdminDashboard() {
+    const carsEl = document.getElementById('adminCarsList');
+    if (carsEl) {
+        carsEl.innerHTML = appState.cars.map((car) => `
+            <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex items-center justify-between gap-2">
+                <div>
+                    <div class="text-xs font-bold text-white">${car.name}</div>
+                    <div class="text-[11px] text-gold-light">${formatUZS(car.basePrice)}</div>
+                </div>
+                <button type="button" onclick="deleteAdminCar('${car.id}')"
+                    class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200">
+                    O‘chirish
+                </button>
+            </div>
+        `).join('');
+    }
+
+    const ordersEl = document.getElementById('adminOrdersList');
+    if (ordersEl) {
+        ordersEl.innerHTML = appState.orders.length === 0
+            ? `<div class="text-xs text-gray-400">Buyurtmalar yo‘q.</div>`
+            : appState.orders.map((ord) => `
+                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 flex flex-wrap items-center justify-between gap-3">
+                    <div class="text-xs space-y-0.5">
+                        <div class="font-bold text-white">${ord.plate} • ${ord.carName} (${ord.tint})</div>
+                        <div class="text-gray-400">${ord.name} — ${ord.phone} • ${ord.date} ${ord.slot} • ${formatUZS(ord.price)}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select onchange="updateAdminOrderStatus('${ord.id}', this.value)"
+                            class="bg-charcoal border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                            <option value="waiting" ${ord.status === 'waiting' ? 'selected' : ''}>Kutmoqda</option>
+                            <option value="in_progress" ${ord.status === 'in_progress' ? 'selected' : ''}>Jarayonda</option>
+                            <option value="completed" ${ord.status === 'completed' ? 'selected' : ''}>Yakunlangan</option>
+                        </select>
+                        <button type="button" onclick="deleteAdminOrder('${ord.id}')"
+                            class="px-2.5 py-1.5 rounded-lg bg-red-950/70 border border-red-500/30 text-xs font-bold text-red-200">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    const revsEl = document.getElementById('adminReviewsList');
+    if (revsEl) {
+        revsEl.innerHTML = appState.reviews.length === 0
+            ? `<div class="text-xs text-gray-400">Sharhlar yo‘q.</div>`
+            : appState.reviews.map((rev) => `
+                <div class="p-3.5 rounded-2xl bg-obsidian border border-white/10 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-white">${rev.name} (${rev.carPlate})</span>
+                        <span class="text-gold">${'★'.repeat(Number(rev.rating) || 5)}</span>
+                    </div>
+                    <p class="text-xs text-gray-300">${rev.comment}</p>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" onclick="toggleAdminReviewApproval('${rev.id}')"
+                            class="px-2.5 py-1 rounded-lg bg-charcoal border border-white/15 text-[11px] font-bold text-gold-light">
+                            ${rev.approved !== false ? 'Yashirish' : 'Tasdiqlash'}
+                        </button>
+                        <button type="button" onclick="deleteAdminReview('${rev.id}')"
+                            class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/30 text-[11px] font-bold text-red-200">
+                            O‘chirish
+                        </button>
+                    </div>
+                </div>
+            `).join('');
     }
 }
 
+/* ==================== NAVIGATSIYA VA ISHGA TUSHIRISH ==================== */
 function navigateTo(sectionId, event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const el = document.getElementById(sectionId);
@@ -730,4 +1019,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('bDate');
     if (dateInput && !dateInput.value) dateInput.value = getTodayISO();
     setLanguage(appState.lang);
+
+    if (appState.adminAuthenticated) {
+        revealAdminSection();
+    }
 });
