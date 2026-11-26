@@ -35,7 +35,16 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="style.css">
+    <script>
+        window.handleSimulatorPhotoLoad = window.handleSimulatorPhotoLoad || function () {
+            const notice = document.getElementById('simPhotoFallbackNotice');
+            if (notice) notice.classList.add('hidden');
+        };
+        window.handleSimulatorPhotoError = window.handleSimulatorPhotoError || function () {
+            const notice = document.getElementById('simPhotoFallbackNotice');
+            if (notice) notice.classList.remove('hidden');
+        };
+    </script>
 </head>
 
 <body class="min-h-screen flex flex-col selection:bg-gold selection:text-obsidian">
@@ -49,7 +58,7 @@
     <header class="sticky top-0 z-50 bg-[#0B0B0D]/92 backdrop-blur-md border-b border-white/10">
         <div
             class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
-            <!-- Brend so'z belgisi: 5-6 marta bosilganda Admin panelga o'tadi -->
+            <!-- Brend so'z belgisi: 5 marta bosilganda Admin panelga o'tadi -->
             <button type="button" id="brandSecretTrigger" onclick="handleBrandSecretTap()" title="PREMIUM TINT"
                 class="flex flex-col justify-center items-start text-left group shrink-0 min-h-[44px] pr-1 focus:outline-none">
                 <div class="text-base sm:text-xl font-extrabold gold-gradient-text leading-none brand-wordmark">PREMIUM
@@ -521,7 +530,72 @@
                             Buyurtmani yuborish
                         </button>
                     </form>
+
+                    <div class="lg:col-span-4 gold-card rounded-3xl p-5 sm:p-6 space-y-4">
+                        <div class="text-xs uppercase tracking-widest text-gold font-semibold">Ishlash tartibi</div>
+                        <h3 class="text-lg font-bold text-white">PREMIUM TINT Studiya</h3>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            Ariza yuborilgach, ma’lumotlar brauzer xotirasida (`localStorage`) saqlanadi. Brend nomini
+                            5 marta bosib, usta ma’lumotlari va mashinalar ro‘yxatini boshqarishingiz mumkin.
+                        </p>
+                        <div class="pt-3 border-t border-white/10 text-xs text-gray-300 space-y-1">
+                            <div><strong class="text-white">Usta:</strong> Ma'rufjon Kudratov (28 yosh)</div>
+                            <div><strong class="text-white">Ish vaqti:</strong> 06:00 — 22:00</div>
+                            <div><strong class="text-white">Standart:</strong> 70% gacha Solntsezashchita</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Admin boshqaruv paneli (brend nomi 5 marta bosilganda ochiladi) -->
+        <section id="adminView" class="hidden py-12 sm:py-16 bg-[#09090C] border-t border-gold/30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-gold font-semibold">Boshqaruv</span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">Admin Panel (LocalStorage)</h2>
+                    </div>
+                    <button type="button" onclick="document.getElementById('adminView').classList.add('hidden')"
+                        class="px-4 py-2 rounded-xl bg-charcoal border border-white/15 text-xs font-bold text-gray-200 hover:text-white">
+                        Yopish
+                    </button>
+                </div>
+
+                <!-- Usta ma'lumotlarini saqlash formasi -->
+                <form onsubmit="saveAdminMasterProfile(event)"
+                    class="gold-card rounded-3xl p-5 sm:p-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">Usta ismi (UZ)</label>
+                        <input id="admMasterNameUz" type="text"
+                            class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">Имя мастера (RU)</label>
+                        <input id="admMasterNameRu" type="text"
+                            class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">Yoshi</label>
+                        <input id="admMasterAge" type="number" min="18" max="90"
+                            class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">Telefon raqami</label>
+                        <input id="admMasterPhone" type="text"
+                            class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white">
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">Manzil</label>
+                        <input id="admWorkshopAddress" type="text"
+                            class="w-full bg-obsidian border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white">
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full gold-btn py-2.5 px-4 rounded-xl text-sm font-bold">
+                            Saqlash
+                        </button>
+                    </div>
+                </form>
             </div>
         </section>
 
