@@ -25,6 +25,10 @@ function handleSimulatorPhotoError() {
     }
 }
 
+// HTML img onload/onerror lari har doim topishi uchun window ga biriktiramiz
+window.handleSimulatorPhotoLoad = handleSimulatorPhotoLoad;
+window.handleSimulatorPhotoError = handleSimulatorPhotoError;
+
 function getTodayISO() {
     const d = new Date();
     const offset = d.getTimezoneOffset() * 60000;
@@ -120,36 +124,82 @@ function sanitizeState(parsed) {
     const oldUzRole = String(parsed.masterInfo?.uzRole || '');
     const oldRuRole = String(parsed.masterInfo?.ruRole || '');
 
+    const cleanCars = Array.isArray(parsed.cars) && parsed.cars.length > 0
+        ? parsed.cars
+            .filter((c) => c && typeof c === 'object' && String(c.name || '').trim())
+            .map((c, idx) => ({
+                id: String(c.id || `car_${idx}_${Date.now()}`),
+                name: String(c.name).trim(),
+                basePrice: Math.max(50000, Number(c.basePrice) || 1100000),
+                type: c.type === 'suv' ? 'suv' : 'sedan',
+                photoUrl: typeof c.photoUrl === 'string' && c.photoUrl.trim() ? c.photoUrl.trim() : DEFAULT_SIM_PHOTO_URL
+            }))
+        : base.cars;
+
+    const cleanOrders = Array.isArray(parsed.orders)
+        ? parsed.orders.filter((o) => o && typeof o === 'object')
+        : base.orders;
+
+    const cleanReviews = Array.isArray(parsed.reviews)
+        ? parsed.reviews.filter((r) => r && typeof r === 'object')
+        : base.reviews;
+
     return {
         ...base,
         lang: parsed.lang === 'ru' ? 'ru' : 'uz',
         adminAuthenticated: Boolean(parsed.adminAuthenticated),
         simTint: [5, 15, 35, 70].includes(Number(parsed.simTint)) ? Number(parsed.simTint) : 35,
-        simCarId: typeof parsed.simCarId === 'string' && parsed.simCarId ? parsed.simCarId : base.simCarId,
+        simCarId: typeof parsed.simCarId === 'string' && parsed.simCarId ? parsed.simCarId : cleanCars[0].id,
         simPhotoUrl: typeof parsed.simPhotoUrl === 'string' && parsed.simPhotoUrl.trim() ? parsed.simPhotoUrl.trim() : DEFAULT_SIM_PHOTO_URL,
         calcCoverage: ['rear', 'full_side', 'full_car'].includes(parsed.calcCoverage) ? parsed.calcCoverage : 'rear',
         masterInfo: {
-            uzName: String(parsed.masterInfo?.uzName || base.masterInfo.uzName),
-            ruName: String(parsed.masterInfo?.ruName || base.masterInfo.ruName),
-            phone: String(parsed.masterInfo?.phone || base.masterInfo.phone),
+            uzName: String(parsed.masterInfo?.uzName ?? base.masterInfo.uzName).trim() || base.masterInfo.uzName,
+            ruName: String(parsed.masterInfo?.ruName ?? base.masterInfo.ruName).trim() || base.masterInfo.ruName,
+            phone: String(parsed.masterInfo?.phone ?? base.masterInfo.phone).trim() || base.masterInfo.phone,
             uzRole: (!oldUzRole || oldUzRole === '30 yoshlik mutaxassis') ? base.masterInfo.uzRole : oldUzRole,
-            uzExp: String(parsed.masterInfo?.uzExp || base.masterInfo.uzExp),
+            uzExp: String(parsed.masterInfo?.uzExp ?? base.masterInfo.uzExp).trim() || base.masterInfo.uzExp,
             ruRole: (!oldRuRole || oldRuRole === 'Специалист 30 лет') ? base.masterInfo.ruRole : oldRuRole,
-            ruExp: String(parsed.masterInfo?.ruExp || base.masterInfo.ruExp)
+            ruExp: String(parsed.masterInfo?.ruExp ?? base.masterInfo.ruExp).trim() || base.masterInfo.ruExp
         },
-        workshopAddress: String(parsed.workshopAddress || base.workshopAddress),
-        cars: Array.isArray(parsed.cars) && parsed.cars.length > 0 ? parsed.cars : base.cars,
-        tintMultipliers: { ...base.tintMultipliers, ...(parsed.tintMultipliers || {}) },
-        coverageMultipliers: { ...base.coverageMultipliers, ...(parsed.coverageMultipliers || {}) },
-        orders: Array.isArray(parsed.orders) ? parsed.orders : base.orders,
-        reviews: Array.isArray(parsed.reviews) ? parsed.reviews : base.reviews
+        workshopAddress: String(parsed.workshopAddress ?? base.workshopAddress).trim() || base.workshopAddress,
+        socials: {
+            ...base.socials,
+            ...(parsed.socials && typeof parsed.socials === 'object' ? parsed.socials : {})
+        },
+        lunchBreak: {
+            ...base.lunchBreak,
+            ...(parsed.lunchBreak && typeof parsed.lunchBreak === 'object' ? parsed.lunchBreak : {})
+        },
+        telegram: {
+            ...base.telegram,
+            ...(parsed.telegram && typeof parsed.telegram === 'object' ? parsed.telegram : {}),
+            logs: Array.isArray(parsed.telegram?.logs) ? parsed.telegram.logs : []
+        },
+        cars: cleanCars.length > 0 ? cleanCars : base.cars,
+        tintMultipliers: {
+            5: Number(parsed.tintMultipliers?.[5] ?? base.tintMultipliers[5]),
+            15: Number(parsed.tintMultipliers?.[15] ?? base.tintMultipliers[15]),
+            35: Number(parsed.tintMultipliers?.[35] ?? base.tintMultipliers[35]),
+            70: Number(parsed.tintMultipliers?.[70] ?? base.tintMultipliers[70])
+        },
+        coverageMultipliers: {
+            rear: Number(parsed.coverageMultipliers?.rear ?? base.coverageMultipliers.rear),
+            full_side: Number(parsed.coverageMultipliers?.full_side ?? base.coverageMultipliers.full_side),
+            full_car: Number(parsed.coverageMultipliers?.full_car ?? base.coverageMultipliers.full_car)
+        },
+        orders: cleanOrders,
+        reviews: cleanReviews
     };
 }
 
 function loadState() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return createDefaultState();
+        if (!raw) {
+            const initial = createDefaultState();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+            return initial;
+        }
         return sanitizeState(JSON.parse(raw));
     } catch (e) {
         return createDefaultState();
@@ -158,13 +208,26 @@ function loadState() {
 
 let appState = loadState();
 let activeMotionStep = 0;
+let brandTapCount = 0;
+let brandTapTimer = null;
 
 function saveState() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        return true;
     } catch (e) {
-        // storage error ignored
+        console.error('localStorage ga saqlashda xato:', e);
+        return false;
     }
+}
+
+// Har qanday o'zgarishni xavfsiz saqlash yordamchi funksiyasi
+function commitState(mutatorFn) {
+    if (typeof mutatorFn === 'function') {
+        mutatorFn(appState);
+    }
+    appState = sanitizeState(appState);
+    saveState();
 }
 
 function formatUZS(amount) {
@@ -175,7 +238,9 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const el = document.createElement('div');
-    const borderColor = type === 'error' ? 'border-red-500/50 text-red-200 bg-red-950/95' : 'border-gold/50 text-gold-light bg-[#16161D]/95';
+    const borderColor = type === 'error'
+        ? 'border-red-500/50 text-red-200 bg-red-950/95'
+        : 'border-gold/50 text-gold-light bg-[#16161D]/95';
     el.className = `pointer-events-auto border ${borderColor} rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold shadow-2xl backdrop-blur-md transition-all`;
     el.textContent = message;
     container.appendChild(el);
@@ -279,8 +344,9 @@ const i18n = {
 };
 
 function setLanguage(lang) {
-    appState.lang = lang === 'ru' ? 'ru' : 'uz';
-    saveState();
+    commitState((st) => {
+        st.lang = lang === 'ru' ? 'ru' : 'uz';
+    });
 
     const uzBtn = document.getElementById('langUzBtn');
     const ruBtn = document.getElementById('langRuBtn');
@@ -305,6 +371,8 @@ function setLanguage(lang) {
     const heroExpEl = document.getElementById('heroExpText');
     const heroFullNameEl = document.getElementById('heroMasterFullName');
     const heroPhoneEl = document.getElementById('heroMasterPhone');
+    const heroAddrEl = document.getElementById('heroAddressText');
+    const heroMapEl = document.getElementById('heroMapLink');
 
     if (heroFullNameEl) {
         heroFullNameEl.textContent = appState.lang === 'ru'
@@ -325,46 +393,91 @@ function setLanguage(lang) {
             ? (appState.masterInfo?.ruExp || '5+ лет опыта')
             : (appState.masterInfo?.uzExp || '5+ yillik tajriba');
     }
+    if (heroAddrEl && appState.workshopAddress) {
+        heroAddrEl.textContent = appState.workshopAddress;
+    }
+    if (heroMapEl && appState.workshopAddress) {
+        heroMapEl.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(appState.workshopAddress);
+    }
 
     const permitEl = document.getElementById('permitInfoText');
     if (permitEl) permitEl.textContent = i18n[appState.lang].permit_full;
 
+    updateQueueBadge();
+    populateTimeSlots();
     updateSimulator();
     recalculatePrice();
+    syncAdminInputsFromState();
 }
 
 function populateCarSelects() {
     ['simCarSelect', 'calcCar', 'bCar'].forEach((id) => {
         const sel = document.getElementById(id);
         if (!sel) return;
+        const prevVal = sel.value;
         sel.innerHTML = '';
         appState.cars.forEach((car) => {
             const opt = document.createElement('option');
             opt.value = car.id;
-            opt.textContent = car.name;
+            opt.textContent = `${car.name} — ${formatUZS(car.basePrice)}`;
             sel.appendChild(opt);
         });
+        if (id === 'simCarSelect') {
+            sel.value = appState.cars.some((c) => c.id === appState.simCarId) ? appState.simCarId : appState.cars[0].id;
+        } else if (prevVal && appState.cars.some((c) => c.id === prevVal)) {
+            sel.value = prevVal;
+        }
     });
-    const simSel = document.getElementById('simCarSelect');
-    if (simSel) simSel.value = appState.simCarId;
+}
+
+function populateTimeSlots() {
+    const slotSel = document.getElementById('bSlot');
+    if (!slotSel) return;
+    const prev = slotSel.value;
+    slotSel.innerHTML = '';
+    for (let h = 6; h <= 21; h++) {
+        ['00', '30'].forEach((m) => {
+            const val = `${String(h).padStart(2, '0')}:${m}`;
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            slotSel.appendChild(opt);
+        });
+    }
+    if (prev) slotSel.value = prev;
+}
+
+function updateQueueBadge() {
+    const badge = document.getElementById('headerQueueBadge');
+    if (!badge) return;
+    const activeCount = appState.orders.filter((o) => o.status !== 'completed' && o.status !== 'cancelled').length;
+    badge.textContent = String(activeCount);
 }
 
 function setSimTint(percent) {
-    appState.simTint = [5, 15, 35, 70].includes(Number(percent)) ? Number(percent) : 35;
-    saveState();
+    commitState((st) => {
+        st.simTint = [5, 15, 35, 70].includes(Number(percent)) ? Number(percent) : 35;
+    });
     updateSimulator();
 }
 
 function applySimulatorPhotoPreset(url) {
     if (!url || !url.trim()) return;
-    appState.simPhotoUrl = url.trim();
-    saveState();
+    commitState((st) => {
+        st.simPhotoUrl = url.trim();
+    });
     updateSimulator();
 }
 
 function updateSimulator() {
     const simSel = document.getElementById('simCarSelect');
-    if (simSel) appState.simCarId = simSel.value;
+    const selectedId = simSel ? simSel.value : appState.simCarId;
+    if (selectedId && selectedId !== appState.simCarId) {
+        commitState((st) => {
+            st.simCarId = selectedId;
+        });
+    }
+
     const carObj = appState.cars.find((c) => c.id === appState.simCarId) || appState.cars[0];
     const tint = appState.simTint;
 
@@ -407,7 +520,9 @@ function updateSimulator() {
 }
 
 function setCoverage(cov) {
-    appState.calcCoverage = ['rear', 'full_side', 'full_car'].includes(cov) ? cov : 'rear';
+    commitState((st) => {
+        st.calcCoverage = ['rear', 'full_side', 'full_car'].includes(cov) ? cov : 'rear';
+    });
     document.querySelectorAll('.cov-btn').forEach((btn) => {
         const active = btn.getAttribute('data-cov') === appState.calcCoverage;
         btn.className = active
@@ -427,6 +542,12 @@ function recalculatePrice() {
 
     const priceEl = document.getElementById('calcPriceDisplay');
     if (priceEl) priceEl.textContent = formatUZS(total);
+
+    const breakdownEl = document.getElementById('calcBreakdownText');
+    if (breakdownEl && car) {
+        breakdownEl.textContent = `${car.name} • ${tintKey}% • ×${(tMult * cMult).toFixed(2)}`;
+    }
+    return total;
 }
 
 function applyCalculatorToBooking() {
@@ -441,37 +562,146 @@ function applyCalculatorToBooking() {
     navigateTo('booking');
 }
 
+function syncAdminInputsFromState() {
+    const uzNameEl = document.getElementById('admMasterNameUz');
+    const ruNameEl = document.getElementById('admMasterNameRu');
+    const ageEl = document.getElementById('admMasterAge');
+    const phoneEl = document.getElementById('admMasterPhone');
+    const addrEl = document.getElementById('admWorkshopAddress');
+
+    if (uzNameEl) uzNameEl.value = appState.masterInfo?.uzName || "Ma'rufjon Kudratov";
+    if (ruNameEl) ruNameEl.value = appState.masterInfo?.ruName || 'Маруфжон Кудратов';
+    if (phoneEl) phoneEl.value = appState.masterInfo?.phone || '+998 90 123 45 67';
+    if (addrEl) addrEl.value = appState.workshopAddress || '';
+
+    if (ageEl) {
+        const match = String(appState.masterInfo?.uzRole || '').match(/(\d+)/);
+        ageEl.value = match ? Number(match[1]) : 28;
+    }
+}
+
 function saveAdminMasterProfile(event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const uzName = (document.getElementById('admMasterNameUz')?.value || "Ma'rufjon Kudratov").trim();
     const ruName = (document.getElementById('admMasterNameRu')?.value || 'Маруфжон Кудратов').trim();
     const ageNum = Math.min(90, Math.max(18, parseInt(document.getElementById('admMasterAge')?.value, 10) || 28));
     const phone = (document.getElementById('admMasterPhone')?.value || '+998 90 123 45 67').trim();
+    const addrInput = document.getElementById('admWorkshopAddress')?.value?.trim();
 
-    appState.masterInfo = {
-        ...appState.masterInfo,
-        uzName,
-        ruName,
-        phone,
-        uzRole: `${ageNum} yoshlik mutaxassis`,
-        ruRole: `Специалист ${ageNum} лет`
-    };
-    saveState();
+    commitState((st) => {
+        st.masterInfo = {
+            ...st.masterInfo,
+            uzName,
+            ruName,
+            phone,
+            uzRole: `${ageNum} yoshlik mutaxassis`,
+            ruRole: `Специалист ${ageNum} лет`
+        };
+        if (addrInput) {
+            st.workshopAddress = addrInput;
+        }
+    });
+
     setLanguage(appState.lang);
     showToast('Usta ma’lumotlari saqlandi');
+}
+
+// Yangi mashina qo'shish (Admin paneldan chaqirish mumkin)
+function addOrUpdateCar({ id, name, basePrice, type = 'sedan', photoUrl }) {
+    const cleanName = String(name || '').trim();
+    const cleanPrice = Math.max(50000, Number(basePrice) || 0);
+    if (!cleanName || !cleanPrice) return false;
+
+    const cleanId = id
+        ? String(id).trim()
+        : cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now().toString().slice(-4);
+
+    commitState((st) => {
+        const idx = st.cars.findIndex((c) => c.id === cleanId);
+        const item = {
+            id: cleanId,
+            name: cleanName,
+            basePrice: cleanPrice,
+            type: type === 'suv' ? 'suv' : 'sedan',
+            photoUrl: (photoUrl && photoUrl.trim()) ? photoUrl.trim() : DEFAULT_SIM_PHOTO_URL
+        };
+        if (idx >= 0) {
+            st.cars[idx] = item;
+        } else {
+            st.cars.push(item);
+        }
+    });
+
+    populateCarSelects();
+    updateSimulator();
+    recalculatePrice();
+    return true;
 }
 
 function handleBookingSubmit(event) {
     if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const name = document.getElementById('bName')?.value?.trim();
     const phone = document.getElementById('bPhone')?.value?.trim();
+    const carId = document.getElementById('bCar')?.value || appState.cars[0]?.id || 'malibu';
     const plate = document.getElementById('bPlate')?.value?.trim().toUpperCase();
+    const tintRaw = document.getElementById('bTint')?.value || '35%';
+    const date = document.getElementById('bDate')?.value || getTodayISO();
+    const slot = document.getElementById('bSlot')?.value || '09:00';
+
     if (!name || !phone || !plate) {
         showToast('Majburiy maydonlarni to‘ldiring', 'error');
         return;
     }
-    showToast('Buyurtma qabul qilindi!');
+
+    const car = appState.cars.find((c) => c.id === carId) || appState.cars[0];
+    const tintNum = parseInt(String(tintRaw), 10) || 35;
+    const tMult = Number(appState.tintMultipliers[tintNum] || 1.0);
+    const cMult = Number(appState.coverageMultipliers[appState.calcCoverage] || 1.0);
+    const price = Math.round(((car?.basePrice || 1100000) * tMult * cMult) / 1000) * 1000;
+
+    commitState((st) => {
+        st.orders.push({
+            id: 'ORD-' + Date.now().toString().slice(-5),
+            name,
+            phone,
+            carId: car?.id || carId,
+            carName: car?.name || carId,
+            plate,
+            tint: tintRaw,
+            coverage: st.calcCoverage,
+            date,
+            slot,
+            price,
+            status: 'waiting',
+            createdAt: new Date().toISOString()
+        });
+    });
+
+    updateQueueBadge();
+    showToast('Buyurtma saqlandi va navbatga qo‘shildi!');
     event.target.reset();
+    const dateInput = document.getElementById('bDate');
+    if (dateInput) dateInput.value = getTodayISO();
+}
+
+function handleBrandSecretTap() {
+    brandTapCount += 1;
+    clearTimeout(brandTapTimer);
+    brandTapTimer = setTimeout(() => {
+        brandTapCount = 0;
+    }, 1800);
+
+    if (brandTapCount >= 5) {
+        brandTapCount = 0;
+        const adminEl = document.getElementById('adminView') || document.getElementById('adminPanel');
+        if (adminEl) {
+            adminEl.classList.remove('hidden');
+            adminEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showToast('Admin panel ochildi');
+        } else {
+            showToast('Admin ma’lumotlari saqlash rejimi faol');
+        }
+    }
 }
 
 function navigateTo(sectionId, event) {
@@ -493,19 +723,10 @@ function replayIntroMotionSequence() {
     showToast('Animatsiya boshlandi');
 }
 
-function downloadSiteHtmlBundle() {
-    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'premium-tint.html';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
 document.addEventListener('DOMContentLoaded', () => {
+    appState = loadState();
     populateCarSelects();
+    populateTimeSlots();
     const dateInput = document.getElementById('bDate');
     if (dateInput && !dateInput.value) dateInput.value = getTodayISO();
     setLanguage(appState.lang);
