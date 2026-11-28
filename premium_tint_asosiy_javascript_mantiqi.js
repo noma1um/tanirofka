@@ -1,4 +1,3 @@
-/* ==================== XOTIRA VA BOSHLANG'ICH HOLAT ==================== */
 const STORAGE_KEY = 'premium_tint_state_v1';
 const BOOKING_DRAFT_KEY = 'premium_tint_booking_draft_v1';
 const ADMIN_PASS = 'admin123';
@@ -263,7 +262,6 @@ function saveState() {
     }
 }
 
-/* ==================== BRON FORMASI QORALAMASINI SAQLASH ==================== */
 function saveBookingDraft() {
     try {
         const draft = {
@@ -279,7 +277,6 @@ function saveBookingDraft() {
         };
         localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(draft));
     } catch (e) {
-        // ignore storage quota errors
     }
 }
 
@@ -302,7 +299,6 @@ function restoreBookingDraft() {
         if (draft.date) document.getElementById('bDate').value = draft.date;
         if (draft.slot) document.getElementById('bSlot').value = draft.slot;
     } catch (e) {
-        // ignore invalid draft json
     }
 }
 
@@ -310,7 +306,6 @@ function clearBookingDraft() {
     try {
         localStorage.removeItem(BOOKING_DRAFT_KEY);
     } catch (e) {
-        // ignore
     }
 }
 
@@ -344,7 +339,6 @@ function showToast(message, type = 'success') {
     }, 3400);
 }
 
-/* ==================== TIL (UZ / RU) ==================== */
 const i18n = {
     uz: {
         nav_home: 'Asosiy',
@@ -365,6 +359,8 @@ const i18n = {
         map_link_label: 'Xarita',
         permit_short_label: 'Ruxsatnoma va BHM',
         permit_short_desc: 'Orqa va yon oynalarga qonuniy me’yorlar asosida xizmat ko‘rsatiladi; ruxsatnoma BHM asosida rasmiylashtiriladi.',
+        sun_rule_title: 'Sonsazashita — Standart quyoshdan himoya',
+        sun_rule_desc: 'Standart quyoshdan himoyalovchi yorug‘lik o‘tkazishi 70% gacha ruxsat; undan past ko‘rsatkich jarimaga sabab bo‘ladi.',
         sim_kicker: 'Oyna Qoraytirish Simulyatori',
         sim_heading: 'Jonli ko‘rinishni sinab ko‘ring',
         tint_level_label: 'Qoraytirish darajasi (VLT / Soya):',
@@ -404,7 +400,7 @@ const i18n = {
         rev_comment: 'Izohingiz *',
         rev_submit: 'Izoh yuborish',
         footer_hours: 'Ish vaqti: 06:00 — 22:00',
-        permit_full: 'Ma’lumot uchun: O‘zbekistonda tonirovka qoidalariga muvofiq orqa yon va orqa oynalar qoraytiriladi; tegishli ruxsatnomalar belgilangan BHM (Bazaviy hisoblash miqdori) stavkalari asosida rasmiylashtiriladi.'
+        permit_full: 'Ma’lumot uchun: O‘zbekistonda tonirovka qoidalariga muvofiq orqa yon va orqa oynalar qoraytiriladi; tegishli ruxsatnomalar belgilangan BHM (Bazaviy hisoblash miqdori) stavkalari asosida rasmiylashtiriladi. Standart quyoshdan himoyalovchi yorug‘lik o‘tkazishi 70% gacha ruxsat; undan past ko‘rsatkich jarimaga sabab bo‘ladi.'
     },
     ru: {
         nav_home: 'Главная',
@@ -425,6 +421,8 @@ const i18n = {
         map_link_label: 'Карта',
         permit_short_label: 'Разрешение и БРВ',
         permit_short_desc: 'Задние и боковые стекла обслуживаются по нормам; разрешение оформляется на основе БРВ.',
+        sun_rule_title: 'Солнцезащита — Стандарт светопропускания',
+        sun_rule_desc: 'Стандартное солнцезащитное пропускание света разрешено до 70%; показатель ниже приводит к штрафу.',
         sim_kicker: 'Симулятор Затемнения',
         sim_heading: 'Проверьте вид стекол вживую',
         tint_level_label: 'Уровень затемнения (VLT):',
@@ -464,7 +462,7 @@ const i18n = {
         rev_comment: 'Ваш отзыв *',
         rev_submit: 'Отправить отзыв',
         footer_hours: 'Время работы: 06:00 — 22:00',
-        permit_full: 'Справка: по правилам в Узбекистане тонируются задние боковые и заднее стекла; официальное разрешение оформляется исходя из установленного БРВ (Базовой расчетной величины).'
+        permit_full: 'Справка: по правилам в Узбекистане тонируются задние боковые и заднее стекла; официальное разрешение оформляется исходя из установленного БРВ (Базовой расчетной величины). Стандартное солнцезащитное пропускание света разрешено до 70%; показатель ниже приводит к штрафу.'
     }
 };
 
@@ -511,7 +509,6 @@ function setLanguage(lang) {
     updateTelegramPreview();
 }
 
-/* ==================== MARSHRUTLASHTIRISH (#/admin, /admin va 5-6 marta bosish) ==================== */
 let brandTapCount = 0;
 let brandTapTimer = null;
 
@@ -519,7 +516,6 @@ function openAdminPanelRoute() {
     try {
         window.location.hash = '#/admin';
     } catch (e) {
-        // fallback
     }
     syncRouteView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -637,7 +633,6 @@ function syncRouteView() {
 window.addEventListener('hashchange', syncRouteView);
 window.addEventListener('popstate', syncRouteView);
 
-/* ==================== SIMULYATOR VA KALKULYATOR ==================== */
 function populateCarSelects() {
     const selects = [
         document.getElementById('simCarSelect'),
@@ -767,7 +762,6 @@ function updateSimulator() {
     }
 }
 
-/* ==================== MASHINA OYNASIGA MOTION ZOOM ==================== */
 const motionWindowStepsUz = [
     {
         title: '1-bosqich: Mashina umumiy ko‘rinishi',
@@ -1017,7 +1011,6 @@ function applyCalculatorToBooking() {
     navigateTo('booking');
 }
 
-/* ==================== BRON QILISH VA SOATLAR (06:00 - 22:00) ==================== */
 function generateSlots06To22() {
     const slots = [];
     for (let hour = 6; hour <= 21; hour++) {
@@ -1206,7 +1199,6 @@ async function handleBookingSubmit(event) {
     showToast(appState.lang === 'ru' ? 'Заявка отправлена в Админ и Telegram!' : 'Buyurtma Admin panel va Telegram botga yuborildi!');
 }
 
-/* ==================== JONLI NAVBAT VA TUSHLIK VAQTI ==================== */
 function renderLunchBanner() {
     const banner = document.getElementById('lunchBreakBanner');
     const titleEl = document.getElementById('lunchBannerTitle');
@@ -1295,7 +1287,6 @@ function renderLiveQueue() {
     });
 }
 
-/* ==================== REYTING VA IZOHLAR (1–5 YULDUZ) ==================== */
 function setReviewRating(starVal) {
     currentReviewRating = starVal;
     document.getElementById('ratingValueLabel').textContent = `${starVal} / 5`;
@@ -1358,7 +1349,6 @@ function renderReviews() {
     });
 }
 
-/* ==================== ADMIN PANEL MANTIQI ==================== */
 function updateAdminAuthUI() {
     const loginBox = document.getElementById('adminLoginBox');
     const dash = document.getElementById('adminDashboard');
@@ -1848,7 +1838,6 @@ function downloadSiteHtmlBundle() {
     }
 }
 
-/* ==================== BOSHQA TAB BILAN LOCALSTORAGE SINXRONI ==================== */
 window.addEventListener('storage', (event) => {
     if (event.key === STORAGE_KEY && event.newValue) {
         try {
@@ -1863,12 +1852,10 @@ window.addEventListener('storage', (event) => {
                 renderAdminAll();
             }
         } catch (e) {
-            // ignore malformed external event
         }
     }
 });
 
-/* ==================== ISHGA TUSHIRISH ==================== */
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('footerYear').textContent = String(new Date().getFullYear());
     document.getElementById('bDate').value = getTodayISO();
