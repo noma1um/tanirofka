@@ -1,4 +1,3 @@
-/* Asosiy sahifa va maxsus stil qoidalari */
 body {
     background-color: #0B0B0D;
     color: #F3F4F6;
@@ -47,7 +46,6 @@ body {
     letter-spacing: 0.14em;
 }
 
-/* Mashina oynasiga yaqinlashish motion animatsiyasi */
 .motion-window-stage {
     transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s ease;
     will-change: transform, filter;
@@ -69,7 +67,6 @@ body {
     animation: pulseBadgeIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Sahifaga kirishda mayin motion animatsiyasi */
 @keyframes motionFadeUp {
     0% {
         opacity: 0;
