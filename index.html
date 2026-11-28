@@ -160,10 +160,6 @@
                             id="replayMotionBtn">
                             Animatsiyani ko‘rish
                         </button>
-                        <button type="button" onclick="downloadSiteHtmlBundle()"
-                            class="px-4 py-3.5 rounded-xl bg-charcoal hover:bg-graphite border border-gold/40 text-xs sm:text-sm font-bold text-gold-light transition">
-                            Sayt faylini yuklab olish (.html)
-                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -180,6 +176,13 @@
                                     target="_blank" rel="noopener noreferrer"
                                     class="text-gold hover:underline font-semibold shrink-0"
                                     data-i18n="map_link_label">Xarita</a>
+                            </div>
+                        
+                            <div
+                                class="mt-2 pt-2 border-t border-white/10 text-[11px] text-gray-300 flex items-center justify-between gap-2">
+                                <span class="text-gray-400">Aloqa:</span>
+                                <a id="heroPhoneLink" href="tel:+998901234567"
+                                    class="text-gold-light hover:text-gold font-semibold truncate transition">+998 90 123 45 67</a>
                             </div>
                         </div>
                         <div class="p-3.5 rounded-2xl bg-charcoal/90 border border-white/10">
@@ -873,6 +876,11 @@
                                 class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
                         </div>
                         <div>
+                            <label class="block text-xs text-gray-400 mb-1">Ustaxona telefon raqami</label>
+                            <input id="admWorkshopPhone" type="tel" placeholder="+998 90 123 45 67"
+                                class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
+                        </div>
+                        <div>
                             <label class="block text-xs text-gray-400 mb-1">Telegram havolasi</label>
                             <input id="admSocialTelegram" type="text" placeholder="https://t.me/..."
                                 class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold">
@@ -911,6 +919,9 @@
                         target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-gold transition">
                         Andijon sh, Jalaquduq tumani, Yorqishloq shahri
                     </a>
+                    <span>•</span>
+                    <a id="footerPhoneLink" href="tel:+998901234567"
+                        class="text-gold-light hover:text-gold font-semibold transition">+998 90 123 45 67</a>
                 </div>
 
                 <div class="flex items-center gap-2.5">
