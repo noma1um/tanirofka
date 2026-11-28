@@ -12,7 +12,6 @@
         href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <script>
-        // Tailwind CSS konfiguratsiyasi (qora-oltin uslub va maxsus shriftlar)
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -40,16 +39,13 @@
 
 <body class="min-h-screen flex flex-col selection:bg-gold selection:text-obsidian">
 
-    <!-- Toast xabarnoma konteyneri -->
     <div id="toastContainer"
         class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0">
     </div>
 
-    <!-- Yuqori navigatsiya paneli -->
     <header class="sticky top-0 z-50 bg-[#0B0B0D]/92 backdrop-blur-md border-b border-white/10">
         <div
             class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
-            <!-- Brend so'z belgisi: 5-6 marta bosilganda Admin panelga o'tadi -->
             <button type="button" id="brandSecretTrigger" onclick="handleBrandSecretTap()" title="PREMIUM TINT"
                 class="flex flex-col justify-center items-start text-left group shrink-0 min-h-[44px] pr-1 focus:outline-none">
                 <div class="text-base sm:text-xl font-extrabold gold-gradient-text leading-none brand-wordmark">PREMIUM
@@ -58,7 +54,6 @@
                 </div>
             </button>
 
-            <!-- Katta ekran menyusi -->
             <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-gray-200">
                 <a href="#home" onclick="navigateTo('home', event)" class="nav-link hover:text-gold transition py-2"
                     data-i18n="nav_home">Asosiy</a>
@@ -76,7 +71,6 @@
                     class="nav-link hover:text-gold transition py-2" data-i18n="nav_reviews">Sharhlar</a>
             </nav>
 
-            <!-- O'ng tomon: Til almashtirish va Bron qilish tugmasi -->
             <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                 <div class="flex items-center bg-charcoal border border-white/15 rounded-xl p-0.5 text-xs font-bold">
                     <button type="button" id="langUzBtn" onclick="setLanguage('uz')"
@@ -93,7 +87,6 @@
             </div>
         </div>
 
-        <!-- Mobil gorizontal menyu -->
         <div
             class="lg:hidden border-t border-white/10 bg-[#0E0E12] px-2.5 py-2 flex items-center gap-2 overflow-x-auto text-xs sm:text-sm font-semibold">
             <button type="button" onclick="navigateTo('home')"
@@ -114,10 +107,8 @@
         </div>
     </header>
 
-    <!-- ==================== ASOSIY MIJOZ QISMI ==================== -->
     <main id="clientView" class="flex-1 motion-enter">
 
-        <!-- Hero bo'limi -->
         <section id="home" class="studio-stage border-b border-white/10 py-8 sm:py-16">
             <div
                 class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
@@ -199,9 +190,19 @@
                                 rasmiylashtiriladi.</div>
                         </div>
                     </div>
+
+                    <div id="sunProtectionRuleBox"
+                        class="p-4 rounded-2xl bg-charcoal/95 border border-gold/35 space-y-1.5">
+                        <div class="text-xs uppercase tracking-wider text-gold font-extrabold"
+                            data-i18n="sun_rule_title">Sonsazashita — Standart quyoshdan himoya</div>
+                        <p id="sunProtectionRuleText" class="text-xs sm:text-sm text-gray-200 leading-relaxed"
+                            data-i18n="sun_rule_desc">
+                            Standart quyoshdan himoyalovchi yorug‘lik o‘tkazishi 70% gacha ruxsat; undan past ko‘rsatkich
+                            jarimaga sabab bo‘ladi.
+                        </p>
+                    </div>
                 </div>
 
-                <!-- O'ng tomon: Jonli oyna qoraytirish simulyatori -->
                 <div class="lg:col-span-6 motion-enter-delay-2">
                     <div class="gold-card rounded-3xl p-4 sm:p-6 space-y-5">
                         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -270,7 +271,6 @@
                             </div>
                         </div>
 
-                        <!-- Skroll / bosqichli oyna yaqinlashish motion bloki -->
                         <div id="scrollWindowMotionBox"
                             class="rounded-2xl border border-gold/40 bg-[#0D0D12] p-3.5 sm:p-4 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -332,7 +332,6 @@
             </div>
         </section>
 
-        <!-- Narx kalkulyatori bo'limi -->
         <section id="simulator" class="py-12 sm:py-16 border-b border-white/10">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
@@ -394,7 +393,8 @@
                             <div class="text-xs text-gray-300 leading-relaxed" id="permitInfoText">
                                 O‘zbekiston qonunchiligiga muvofiq orqa yon va orqa oynalar erkin qoraytiriladi; old yon
                                 oynalar uchun ruxsatnoma (migalka/tonirovka ruxsatnomasi) BHM (Bazaviy hisoblash
-                                miqdori) asosida rasmiylashtiriladi.
+                                miqdori) asosida rasmiylashtiriladi. Standart quyoshdan himoyalovchi yorug‘lik
+                                o‘tkazishi 70% gacha ruxsat; undan past ko‘rsatkich jarimaga sabab bo‘ladi.
                             </div>
                         </div>
                     </div>
@@ -419,7 +419,6 @@
             </div>
         </section>
 
-        <!-- Bron qilish formasi bo'limi -->
         <section id="booking" class="py-12 sm:py-16 border-b border-white/10 scroll-mt-24 sm:scroll-mt-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-8">
@@ -535,7 +534,6 @@
             </div>
         </section>
 
-        <!-- "Navbatdagi mashinalar" -->
         <section id="queue" class="py-12 sm:py-16 border-b border-white/10 scroll-mt-24 sm:scroll-mt-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -580,7 +578,6 @@
             </div>
         </section>
 
-        <!-- Reyting va izohlar bo'limi -->
         <section id="reviews" class="py-12 sm:py-16 scroll-mt-24 sm:scroll-mt-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
@@ -649,7 +646,6 @@
         </section>
     </main>
 
-    <!-- ==================== ADMIN PANEL ==================== -->
     <section id="adminView" class="hidden flex-1 py-8 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <div id="adminLoginBox" class="max-w-md mx-auto gold-card rounded-3xl p-6 sm:p-8 space-y-5 mt-6">
@@ -902,7 +898,6 @@
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="bg-[#070709] border-t border-white/10 py-8 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-5">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
