@@ -2,6 +2,7 @@ const STORAGE_KEY = 'premium_tint_state_v1';
 const BOOKING_DRAFT_KEY = 'premium_tint_booking_draft_v1';
 const ADMIN_PASS = 'admin123';
 const DEFAULT_SIM_PHOTO_URL = 'https://orientrentcar.uz/wp-content/uploads/2023/11/32-es.jpg';
+const DEFAULT_WORKSHOP_PHONE = '+998 90 123 45 67';
 
 function handleSimulatorPhotoLoad() {
     const notice = document.getElementById('simPhotoFallbackNotice');
@@ -46,6 +47,7 @@ function createDefaultState() {
             ruExp: '5+ лет опыта'
         },
         workshopAddress: 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri',
+        workshopPhone: DEFAULT_WORKSHOP_PHONE,
         socials: {
             telegram: 'https://t.me/',
             instagram: 'https://instagram.com/',
@@ -213,6 +215,7 @@ function sanitizeState(parsed) {
             ruExp: String(parsed.masterInfo?.ruExp || base.masterInfo.ruExp)
         },
         workshopAddress: String(parsed.workshopAddress || base.workshopAddress),
+        workshopPhone: String(parsed.workshopPhone || base.workshopPhone || DEFAULT_WORKSHOP_PHONE).trim() || DEFAULT_WORKSHOP_PHONE,
         socials: {
             telegram: String(parsed.socials?.telegram || base.socials.telegram),
             instagram: String(parsed.socials?.instagram || base.socials.instagram),
@@ -1715,20 +1718,37 @@ function normalizeSocialUrl(raw, platform) {
     return `https://${val}`;
 }
 
+function formatPhoneHref(rawPhone) {
+    const cleaned = String(rawPhone || DEFAULT_WORKSHOP_PHONE).replace(/[^\d+]/g, '');
+    return cleaned ? `tel:${cleaned}` : 'tel:+998901234567';
+}
+
 function applyWorkshopAndSocialDisplay() {
     const addr = appState.workshopAddress || 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri';
+    const phone = String(appState.workshopPhone || DEFAULT_WORKSHOP_PHONE).trim() || DEFAULT_WORKSHOP_PHONE;
+    const phoneHref = formatPhoneHref(phone);
     const encoded = encodeURIComponent(addr);
     const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
 
     const heroAddr = document.getElementById('heroAddressText');
     const heroMap = document.getElementById('heroMapLink');
+    const heroPhone = document.getElementById('heroPhoneLink');
     const footerAddr = document.getElementById('footerAddressLink');
+    const footerPhone = document.getElementById('footerPhoneLink');
 
     if (heroAddr) heroAddr.textContent = addr;
     if (heroMap) heroMap.href = mapUrl;
+    if (heroPhone) {
+        heroPhone.textContent = phone;
+        heroPhone.href = phoneHref;
+    }
     if (footerAddr) {
         footerAddr.textContent = addr;
         footerAddr.href = mapUrl;
+    }
+    if (footerPhone) {
+        footerPhone.textContent = phone;
+        footerPhone.href = phoneHref;
     }
 
     const tgBtn = document.getElementById('socialTelegramBtn');
@@ -1753,12 +1773,14 @@ function applyWorkshopAndSocialDisplay() {
 
 function renderAdminWorkshopAndSocials() {
     const addrInput = document.getElementById('admWorkshopAddress');
+    const phoneInput = document.getElementById('admWorkshopPhone');
     const tgInput = document.getElementById('admSocialTelegram');
     const igInput = document.getElementById('admSocialInstagram');
     const fbInput = document.getElementById('admSocialFacebook');
     const exInput = document.getElementById('admSocialExtra');
 
     if (addrInput) addrInput.value = appState.workshopAddress || 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri';
+    if (phoneInput) phoneInput.value = appState.workshopPhone || DEFAULT_WORKSHOP_PHONE;
     if (tgInput) tgInput.value = appState.socials?.telegram || '';
     if (igInput) igInput.value = appState.socials?.instagram || '';
     if (fbInput) fbInput.value = appState.socials?.facebook || '';
@@ -1767,6 +1789,7 @@ function renderAdminWorkshopAndSocials() {
 
 function saveWorkshopAndSocialSettings() {
     appState.workshopAddress = (document.getElementById('admWorkshopAddress').value || '').trim() || 'Andijon sh, Jalaquduq tumani, Yorqishloq shahri';
+    appState.workshopPhone = (document.getElementById('admWorkshopPhone')?.value || '').trim() || DEFAULT_WORKSHOP_PHONE;
     appState.socials = {
         telegram: (document.getElementById('admSocialTelegram').value || '').trim(),
         instagram: (document.getElementById('admSocialInstagram').value || '').trim(),
@@ -1775,7 +1798,7 @@ function saveWorkshopAndSocialSettings() {
     };
     saveState();
     applyWorkshopAndSocialDisplay();
-    showToast('Manzil va ijtimoiy tarmoq havolalari saqlandi');
+    showToast('Telefon raqami, manzil va ijtimoiy tarmoq sozlamalari saqlandi');
 }
 
 function toggleReviewApproval(reviewId) {
@@ -1820,23 +1843,6 @@ function renderAdminReviews() {
     });
 }
 
-function downloadSiteHtmlBundle() {
-    try {
-        const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-        const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'premium-tint-index.html';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast('Sayt fayli (premium-tint-index.html) yuklab olindi!');
-    } catch (e) {
-        showToast('Faylni yuklab olishda xatolik yuz berdi', 'error');
-    }
-}
 
 window.addEventListener('storage', (event) => {
     if (event.key === STORAGE_KEY && event.newValue) {
